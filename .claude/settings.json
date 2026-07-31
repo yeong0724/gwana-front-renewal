@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx next *)",
+      "Bash(npx eslint *)",
+      "Bash(echo \"lint exit: $?\")",
+      "Bash(node -e \"console.log\\(JSON.stringify\\(require\\('./package.json'\\).scripts,null,2\\)\\)\")",
+      "Bash(find ~/Desktop -maxdepth 3 \\\\\\( -iname \"*.png\" -o -iname \"*.svg\" -o -iname \"*.jpg\" -o -iname \"*.webp\" \\\\\\) -not -path \"*/node_modules/*\" 2>/dev/null | head -30)",
+      "Read(//Users/gimjin-yeong/Desktop/**)",
+      "Bash(cp ~/Desktop/dev/gwana-project/gwana-logo-no-background.png public/gwana-logo.png)",
+      "Bash(sips -g pixelWidth -g pixelHeight public/gwana-logo.png)",
+      "Read(//Applications/Google Chrome.app/**)",
+      "Read(//Applications/**)",
+      "Read(//Users/gimjin-yeong/Library/Caches/**)",
+      "Bash(echo \"lint exit $?\")",
+      "Bash(perl -pi -e 's/border-b border-border bg-background/border-b border-header-line bg-background/; s/border-l border-border/border-l border-header-line/g' src/components/layout/site-header.tsx)",
+      "Bash(perl -pi -e 's/border-r border-border/border-r border-header-line/' src/components/layout/header-mobile-menu.tsx)"
+    ]
+  }
+}

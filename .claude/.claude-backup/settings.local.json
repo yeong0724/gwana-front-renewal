@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm -v)",
+      "Bash(npm view *)",
+      "Bash(npx --yes create-next-app@16.2.12 --help)",
+      "Bash(mv .claude /private/tmp/claude-501/-Users-gimjin-yeong-Desktop-dev-new-gwana/3a14c74f-866d-4891-bfee-f6b4c651392f/scratchpad/.claude-backup && ls -la)"
+    ],
+    "additionalDirectories": [
+      "/Users/gimjin-yeong/Desktop/dev/new-gwana/.claude"
+    ]
+  }
+}
