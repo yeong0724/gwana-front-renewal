@@ -7,7 +7,9 @@ import { CustomEase } from "gsap/CustomEase";
 import { ScrollSmoother } from "gsap/ScrollSmoother";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-import { useIsomorphicLayoutEffect } from "@/lib/use-isomorphic-layout-effect";
+import { BG, BORDER } from "@/constants/colors";
+import { useIsomorphicLayoutEffect } from "@/hooks/useIsomorphicLayoutEffect";
+import { cn } from "@/lib/utils";
 
 gsap.registerPlugin(ScrollTrigger, ScrollSmoother, CustomEase);
 
@@ -91,12 +93,17 @@ export function HeroSection() {
   return (
     <section
       ref={sectionRef}
-      className="relative h-[100svh] overflow-hidden border-b border-header-line bg-black lg:h-[calc(100vh+1px)]"
+      className={cn(
+        "relative h-svh overflow-hidden border-b",
+        "lg:h-[calc(100vh+1px)]",
+        BG.black,
+        BORDER.line,
+      )}
     >
       <div ref={imageWrapRef} className="absolute inset-0">
         <Image
           ref={imageRef}
-          src="/hero-tea-field.jpg"
+          src="/home/main_1.jpg"
           alt="산비탈에 층층이 이어진 가와나 차밭"
           fill
           priority
@@ -106,7 +113,7 @@ export function HeroSection() {
       </div>
 
       <div className="relative flex h-full items-end">
-        <div className="w-full overflow-hidden pb-7 pl-[22px] pr-[12.5vw]">
+        <div className="w-full overflow-hidden pb-7 pl-5.5 pr-[12.5vw]">
           <div ref={logoRef}>
             <Image
               src="/gwana-logo.png"
@@ -115,7 +122,7 @@ export function HeroSection() {
               height={676}
               priority
               sizes="(min-width: 1024px) 46vw, 70vw"
-              className="w-[70vw] max-w-[560px] invert lg:w-[46vw]"
+              className={cn("w-[70vw] max-w-140 invert", "lg:w-[46vw]")}
             />
           </div>
         </div>

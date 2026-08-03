@@ -4,7 +4,7 @@ import gsap from "gsap";
 import { ScrollSmoother } from "gsap/ScrollSmoother";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-import { useIsomorphicLayoutEffect } from "@/lib/use-isomorphic-layout-effect";
+import { useIsomorphicLayoutEffect } from "@/hooks/useIsomorphicLayoutEffect";
 
 gsap.registerPlugin(ScrollTrigger, ScrollSmoother);
 

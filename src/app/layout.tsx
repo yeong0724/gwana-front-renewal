@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { PageTransition } from "@/components/layout/page-transition";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SmoothScroll } from "@/components/layout/smooth-scroll";
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/shadcn-ui/sonner";
+import { BG, TEXT } from "@/constants/colors";
+import { cn } from "@/lib/utils";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,14 +31,26 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={cn(
+        geistSans.variable,
+        geistMono.variable,
+        "h-full antialiased",
+      )}
     >
-      <body className="min-h-full text-[12px] leading-[1.4]">
+      <body
+        className={cn(
+          "min-h-full text-[12px] leading-[1.4]",
+          BG.page,
+          TEXT.ink,
+        )}
+      >
         {/* Fixed chrome stays outside the smoother, which transforms its content. */}
         <SiteHeader />
         <SmoothScroll>
           {/* Clears the fixed bar: 48px + 8px inset on mobile, 60px on desktop. */}
-          <main className="pt-14 lg:pt-15">{children}</main>
+          <main className={cn("pt-14", "lg:pt-15")}>
+            <PageTransition>{children}</PageTransition>
+          </main>
         </SmoothScroll>
         <Toaster />
       </body>

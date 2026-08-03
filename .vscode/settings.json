@@ -1,0 +1,6 @@
+{
+  // 레이아웃 수치 상당수가 레퍼런스(postevand.com)에서 실측한 px 값이라
+  // 임의값 표기를 의도적으로 유지한다. 자세한 배경은 docs/ARCHITECTURE.md 참고.
+  // 이 규칙을 켜두면 max-w-[425px] 를 max-w-106.25 로 바꾸라는 제안이 계속 뜬다.
+  // "tailwindCSS.lint.suggestCanonicalClasses": "ignore"
+}

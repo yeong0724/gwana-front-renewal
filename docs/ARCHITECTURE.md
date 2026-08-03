@@ -1,0 +1,555 @@
+# gwana tea house - 아키텍처 노트
+
+> 이 문서는 다음 세션에서 맥락 없이 읽어도 이어서 작업할 수 있도록 쓴 것이다.
+> "무엇을 했는가"보다 **"왜 그렇게 했는가"** 와 **"어디서 깨지는가"** 를 남긴다.
+> 마지막 갱신: 2026-07-31
+
+---
+
+## 1. 이 프로젝트가 무엇인가
+
+가와나 티하우스(한국 차 브랜드)의 커머스 프론트엔드.
+디자인/인터랙션 레퍼런스는 **https://postevand.com** (덴마크 생수 브랜드, Shopify Liquid + GSAP 3.11.3).
+
+레퍼런스를 "느낌만 참고"하는 것이 아니라 **수치까지 복제**하는 것이 이 프로젝트의 방침이다.
+그래서 아래 규칙이 적용된다.
+
+- 값이 애매하면 추측하지 말고 **레퍼런스의 실제 CSS/JS를 파싱해서** 확인한다.
+- 레퍼런스와 다르게 갈 때는 **왜 다른지 근거를 남긴다** (§6).
+
+### 레퍼런스 분석 방법
+
+스크린샷 눈대중은 금지. 아래 순서로 실측한다.
+
+```bash
+# 1. HTML + 테마 번들 내려받기
+curl -sL -A "Mozilla/5.0 ..." https://postevand.com/ -o pv.html
+grep -oE '/cdn/shop/t/5/assets/[a-zA-Z0-9._-]+\.(css|js)[^"]*' pv.html | sort -u
+curl -sL "https://postevand.com/cdn/shop/t/5/assets/app.css?v=..." -o app.css
+curl -sL "https://postevand.com/cdn/shop/t/5/assets/app.js?v=..."  -o app.js
+
+# 2. app.css는 정규식으로 규칙 추출, app.js는 minify 해제 후 클래스 단위로 읽기
+```
+
+`app.js`는 169KB 난독화 번들이지만 클래스 메서드명(`initScrollTriggersDesktop`, `animateHero`,
+`navigateTo`, `hide`, `show`)은 살아 있어서 검색으로 찾을 수 있다.
+
+**중요**: 레퍼런스는 `html { font-size: 62.5% }` 이므로 **1rem = 10px** 이다.
+우리 프로젝트는 기본 16px이므로 레퍼런스의 rem 값을 그대로 옮기면 안 된다.
+그래서 레퍼런스에서 가져온 치수는 전부 **px 또는 vw/vh 리터럴**로 적어두었다.
+
+---
+
+## 2. 스택
+
+| 항목         | 버전         | 비고                                                    |
+| ------------ | ------------ | ------------------------------------------------------- |
+| Next.js      | 16.2.12      | App Router, Turbopack                                   |
+| React        | 19.2.4       |                                                         |
+| Tailwind CSS | `~4.2.4`     | **핀 고정**. `^4`로 두면 4.3+로 올라간다                |
+| shadcn/ui    | CLI 4.16.0   | style `radix-nova`, preset `nova`, base color neutral   |
+| GSAP         | ^3.15.0      | ScrollTrigger / ScrollSmoother / SplitText / CustomEase |
+| 아이콘       | lucide-react | shadcn이 끌고 온 것. 한 프로젝트 한 아이콘 패밀리 유지  |
+
+### 애니메이션 라이브러리는 GSAP 하나만 쓴다
+
+초기에 Motion(`motion/react`)으로 구현했다가 **전부 GSAP으로 교체하고 Motion은 제거**했다.
+이유는 레퍼런스가 GSAP이고, 특히 **ScrollSmoother**가 필요했기 때문이다(§5).
+GSAP과 Motion을 같은 트리에서 섞으면 프레임을 두고 경합한다. 다시 섞지 말 것.
+
+ScrollSmoother / SplitText / CustomEase는 예전엔 Club GreenSock 유료 플러그인이었지만
+**GSAP 3.13부터 퍼블릭 npm 패키지에 무료로 포함**된다. 별도 라이선스나 레지스트리 설정 불필요.
+
+---
+
+## 3. 디렉토리 구조
+
+```
+src/
+├─ app/
+│  ├─ layout.tsx              # 합성 순서가 핵심 (§4)
+│  ├─ page.tsx                # 홈: Hero + ProductScroll
+│  ├─ globals.css             # 토큰 + base 레이어
+│  ├─ about|shop|admin|login|bag/page.tsx   # 자리표시 스텁
+│
+├─ components/
+│  ├─ layout/
+│  │  ├─ site-header.tsx      # 고정 헤더 (서버 컴포넌트)
+│  │  ├─ header-nav-link.tsx  # 활성 상태 (클라이언트)
+│  │  ├─ header-mobile-menu.tsx
+│  │  ├─ nav-items.ts         # 메뉴 정의 + HEADER_LABEL 타입 스케일
+│  │  ├─ smooth-scroll.tsx    # ScrollSmoother 래퍼 + 초기화
+│  │  ├─ page-transition.tsx  # 페이지 전환 (§8)
+│  │  └─ placeholder-page.tsx
+│  │
+│  ├─ home/
+│  │  ├─ hero-section.tsx           # 히어로 (§6.1)
+│  │  └─ product-scroll-section.tsx # 핀 고정 스크럽 섹션 (§6.2)
+│  │
+│  └─ ui/                     # shadcn 생성물. 손으로 고치지 않는다
+│
+└─ lib/
+   ├─ utils.ts                # cn()
+   └─ useIsomorphicLayoutEffect.ts
+```
+
+---
+
+## 4. 레이아웃 합성 순서 (가장 중요)
+
+`layout.tsx`의 중첩 순서는 **취향이 아니라 제약**이다. 바꾸면 조용히 깨진다.
+
+```
+<body>
+  <SiteHeader />              ← position:fixed. 반드시 스무더 바깥
+  <SmoothScroll>              ← #smooth-wrapper > #smooth-content
+    <SmoothScrollInit />      ← content의 "첫 번째 자식"이어야 함
+    <main className="pt-14 lg:pt-15">
+      <PageTransition>        ← #view. 여기만 페이드된다
+        {children}
+      </PageTransition>
+    </main>
+  </SmoothScroll>
+  <Toaster />                 ← fixed. 스무더 바깥
+</body>
+```
+
+### 왜 fixed 요소가 스무더 바깥이어야 하는가
+
+ScrollSmoother는 `#smooth-content`에 `transform: matrix3d(...)`를 걸어 스크롤을 흉내낸다.
+**transform이 걸린 조상 안에서는 `position: fixed`가 뷰포트가 아니라 그 조상 기준**이 된다.
+헤더를 안에 넣으면 스크롤과 함께 밀려 올라간다. 레퍼런스도 `<header id="banner">`를
+`#smooth-wrapper` **앞**에 둔다.
+
+### 왜 SmoothScrollInit이 첫 번째 자식이어야 하는가
+
+React는 **자식의 layout effect를 부모보다 먼저** 실행한다.
+`SmoothScroll`이 children을 감싸는 구조에서 초기화를 부모 컴포넌트 본체에 두면,
+히어로/제품 섹션의 effect가 **스무더가 존재하기 전에** 실행된다. 결과:
+
+- `ScrollSmoother.get()`이 `undefined` → 패럴랙스가 안 붙는다
+- 그 시점에 만들어진 ScrollTrigger는 **변형되지 않은 문서 좌표**를 기준으로 측정한다
+
+형제 컴포넌트의 effect는 렌더 순서대로 실행되므로, 초기화 전용 컴포넌트를
+`#smooth-content`의 첫 자식으로 렌더해 순서를 강제했다. 이 구조를 유지할 것.
+
+---
+
+## 5. 스크롤 아키텍처
+
+### ScrollSmoother
+
+```ts
+// smooth-scroll.tsx, 레퍼런스 설정 그대로
+ScrollTrigger.config({ ignoreMobileResize: true });
+gsap.matchMedia().add("(min-width: 1024px)", () => {
+  const smoother = ScrollSmoother.create({
+    smooth: 1,
+    smoothTouch: 1,
+    effects: true,
+  });
+  return () => smoother.kill();
+});
+```
+
+`1024px 이상에서만` 생성하는 것도 레퍼런스와 동일하다.
+
+### CSS sticky를 쓰면 안 된다
+
+핀 고정에 `position: sticky`를 쓰면 안 된다.
+**transform이 걸린 조상 안에서 sticky는 동작하지 않기 때문**이다.
+레퍼런스가 sticky 대신 ScrollTrigger `pin:`을 쓰는 이유가 이것이다.
+초기 Motion 구현에서 sticky를 썼다가 GSAP 전환 시 전부 `pin:`으로 교체했다.
+
+### 브레이크포인트 분기는 gsap.matchMedia()
+
+`useState` + `matchMedia` 커스텀 훅으로 분기하던 것을 `gsap.matchMedia()`로 통일했다.
+데스크톱 / 모바일 / `prefers-reduced-motion`을 한 콜백에서 받고, `mm.revert()` 한 번으로
+트윈·ScrollTrigger·`gsap.set`으로 바꾼 인라인 스타일까지 전부 되돌린다.
+
+```ts
+mm.add({ isDesktop: "(min-width: 1024px)", reduce: "(prefers-reduced-motion: reduce)" },
+  (ctx) => {
+    const { isDesktop, reduce } = ctx.conditions as { isDesktop: boolean; reduce: boolean };
+    ...
+    return cleanup;          // 조건이 바뀌면 자동 호출
+  },
+  scopeRef);                 // 세 번째 인자는 scope
+```
+
+---
+
+## 6. 섹션별 사양 (레퍼런스 실측값)
+
+### 6.1 히어로 `hero-section.tsx`
+
+| 동작                | 값                                                                   | 출처                        |
+| ------------------- | -------------------------------------------------------------------- | --------------------------- |
+| 진입: 사진 드리프트 | `objectPosition 50% 32% → 50% 40%`, 1.5s, ease `custom`              | `animateHero`               |
+| 진입: 워드마크      | 마스크 밖에서 `yPercent 100 → 0`, 0.8s                               | `animateHero`               |
+| 스크롤: 디밍        | `opacity 1 → 0.6`, `start "top+=30% top"`, `end "bottom top"`, scrub | `initScrollTriggersDesktop` |
+| 스크롤: 패럴랙스    | `smoother.effects(el, { speed: 0.85 })`                              | `addParallax`               |
+| 섹션 높이           | `h-[100svh] lg:h-[calc(100vh+1px)]`, 배경 검정                       | `.home-scroll__hero`        |
+
+`CustomEase.create("custom", "M0,0 C0.25,0.1 0.25,1 1,1")` - 레퍼런스가 등록하는 이름과 경로 그대로.
+(= `cubic-bezier(.25,.1,.25,1)`, CSS의 `ease`와 동일)
+
+**실측 검증 결과** (1440x900, scrollY별):
+
+| scrollY | content transform | hero opacity | parallax Y |
+| ------- | ----------------- | ------------ | ---------- |
+| 300     | -300              | 0.981        | 45.0       |
+| 600     | -600              | 0.791        | 90.0       |
+| 850     | -850              | 0.632        | 127.5      |
+
+parallax Y가 스크롤의 정확히 15%(= speed 0.85)임을 확인.
+
+### 6.2 제품 섹션 `product-scroll-section.tsx`
+
+레퍼런스는 **600vh 구간을 핀 고정하고 8개 트윈을 순차 스크럽**한다. 그대로 옮겼다.
+
+```ts
+gsap
+  .timeline({
+    scrollTrigger: {
+      trigger: section,
+      start: "top top",
+      end: "bottom bottom",
+      pin: wrapper,
+      scrub: true,
+      invalidateOnRefresh: true,
+    },
+  })
+  .to(details, { duration: 1 }) // 대기
+  .to(details, { duration: 1, width: "100%" }) // 패널 확장
+  .to(product, { duration: 1, scale: 1, ease: "power2.out" }, "<") // ★ 우리 추가분
+  .to(details, { duration: 0, borderLeftColor: "transparent" })
+  .to(bodySplit.lines, { duration: 1, yPercent: 0, stagger: 0.2 })
+  .to(statOneSplit.lines, { duration: 1, stagger: 0.4, yPercent: 0 })
+  .to(statTwoSplit.lines, { duration: 1, stagger: 0.4, yPercent: 0 })
+  .to(reference, { duration: 1, opacity: 1 })
+  .to(details, { duration: 1 }); // 대기
+```
+
+줄 단위 마스크는 레퍼런스가 SplitText를 **두 번** 호출해 inner/outer 래퍼를 만든다.
+GSAP 3.13+의 `mask: "lines"` 옵션이 같은 일을 하므로 그걸 썼다.
+
+```ts
+SplitText.create(el, { type: "lines", mask: "lines" });
+```
+
+모바일(<1024px)은 레퍼런스와 동일하게 핀 없이 세로 스택 + 진입 리빌만 한다.
+
+---
+
+## 7. 레퍼런스와 의도적으로 다른 부분
+
+기록해두지 않으면 나중에 "왜 안 맞지?" 하게 되는 지점들.
+
+### 7.1 제품 이미지 맞춤 방식
+
+레퍼런스 소스는 **1920x1080 가로 이미지에 세로로 긴 카톤이 여백을 두고** 들어 있다.
+그래서 `object-fit: cover`를 걸어도 제품이 작게 보인다.
+우리 차통 사진은 **1024x1024 정사각형에 제품이 꽉 찬 컷**이라 cover를 쓰면 화면을 뒤덮는다.
+
+→ `object-contain` + 흰 배경 + 높이 제한(`lg:max-h-[48vh]`)으로 변경.
+
+### 7.2 제품 확대 트윈 (레퍼런스에 없음)
+
+레퍼런스를 실측한 결과 **확대 애니메이션은 존재하지 않는다**.
+
+| 핀 진행 | 패널 폭 | cover 배율 | 렌더 크기 | img transform |
+| ------- | ------- | ---------- | --------- | ------------- |
+| 0       | 720     | 0.8333     | 1600x900  | none          |
+| 0.3     | 1440    | 0.8333     | 1600x900  | none          |
+| 0.9     | 1440    | 0.8333     | 1600x900  | none          |
+
+카톤은 분할 시점과 중앙 시점 모두 160x535px로 동일하고 가로 위치만 이동한다.
+"커지는 것처럼" 보이는 이유는 카톤이 뷰포트 높이의 **59%** 를 차지한 채 빈 흰 화면
+정중앙으로 들어오기 때문이다.
+
+사용자 요청으로 **`scale 0.78 → 1` 트윈을 추가**했다(`PRODUCT_SCALE_FROM`).
+패널 확장 트윈과 `"<"`로 동시 시작한다. 레퍼런스로 되돌리려면 이 트윈과 상수를 지우면 된다.
+
+### 7.3 좌우 문구 박스
+
+레퍼런스는 `width: 34.7222vw`, `font-size: 5.5556vw`. 이건 "97% plant-based materials" 같은
+**긴 영문**을 담기 위한 치수다. 훨씬 짧은 한글에는 과해서, 정사각형 제품이 들어갈 통로가 없었다.
+
+→ `lg:w-[28vw]`, `lg:text-[4.6vw]`, 좌우 여백 `6.25vw → 5vw`로 조정.
+제목(h2)은 왼쪽 절반을 독점하므로 레퍼런스 `5.5556vw` 유지.
+
+### 7.4 헤더 로고
+
+레퍼런스 워드마크는 가로세로비 6.34라서 14px 높이로도 읽힌다.
+우리 로고는 2단 락업(비율 2.55)이라 같은 높이면 판독 불가.
+→ 데스크톱 24px로 키움. 히어로의 대형 마크도 `max-w-[560px]`로 제한
+(전체 폭으로 깔면 세로가 과해진다).
+
+### 7.5 reduced motion
+
+레퍼런스는 `prefers-reduced-motion`을 전혀 처리하지 않는다. 우리는 처리한다.
+핀·마스크·패럴랙스를 모두 끄고, 600vh 활주로가 빈 채 남지 않도록
+`motion-reduce:lg:h-auto`로 섹션을 접는다.
+
+---
+
+## 8. 페이지 전환 `page-transition.tsx`
+
+레퍼런스는 Shopify Liquid라 클라이언트 라우터가 없어 **AJAX로 직접** 구현한다.
+
+```
+클릭 → preventDefault → <html>.page-transitioning 추가 → pushState
+     → Promise.all([fetch(URL), hide()])     // 페치와 페이드아웃 병렬
+     → #view innerHTML 교체 + title/body class 갱신
+     → show() → 락 해제
+```
+
+`Fade` 전환의 실제 내용:
+
+```js
+hide: gsap.fromTo(view, {opacity:1}, {duration:.3, ease:"power1.out", opacity:0})
+show: smoother.scrollTo(0) 후
+      gsap.fromTo(view, {opacity:0}, {duration:.3, ease:"power1.in",  opacity:1})
+```
+
+우리는 fetch/innerHTML 교체 대신 `router.push`를 쓰되, **duration·ease·순서·락 클래스명은
+그대로** 가져왔다. 두 가지 트릭이 필요했다.
+
+### 8.1 클릭은 capture 단계에서 가로챈다
+
+버블 단계에 리스너를 달면 `next/link`의 핸들러가 먼저 돌아 페이드아웃 전에 라우팅이 시작된다.
+`document`에 **capture: true**로 달고 `preventDefault()` + `stopPropagation()`으로 막은 뒤,
+페이드아웃 완료 콜백에서 `router.push`를 호출한다.
+
+### 8.2 뒤로가기는 popstate를 가로채 재생한다
+
+Next 라우터는 `popstate`를 즉시 처리해서, 그냥 두면 콘텐츠가 페이드 없이 교체된다.
+**우리 리스너가 라우터보다 먼저 등록된다**는 점(자식 effect가 먼저 실행)을 이용한다.
+
+```ts
+event.stopImmediatePropagation(); // 라우터 핸들러 차단
+hide(() => {
+  bypassPopstate.current = true;
+  window.dispatchEvent(new PopStateEvent("popstate", { state: history.state }));
+}); // 페이드 후 라우터에 넘김
+```
+
+URL은 브라우저가 이미 바꿨지만 화면은 이전 페이지가 페이드아웃되는 동안 유지된다.
+Next가 리스너를 먼저 등록하도록 바뀌면 `stopImmediatePropagation`이 무력화되어
+"즉시 교체 + 페이드인"으로 degrade한다. 깨지지는 않는다.
+
+### 8.3 제외 규칙
+
+레퍼런스 셀렉터와 동일: `target` 있음 / `data-page-transition-disabled` / `href^="#"` /
+외부 도메인 / 같은 경로 / 수식키 클릭은 가로채지 않는다.
+
+전환 중에는 `html.page-transitioning #view { pointer-events: none }`로 중복 클릭을 막는다.
+헤더는 `#view` 바깥이라 전환 중에도 고정된 채 남는다(레퍼런스와 동일).
+
+---
+
+## 9. className / 색 컨벤션 (필수)
+
+### 9.A className은 항상 `cn()`으로 쪼갠다
+
+문자열 하나에 몰아넣지 않는다. **줄 단위로 브레이크포인트를 분리**한다.
+순서는 기본 → **큰 폭에서 작은 폭 순**(2xl → xl → lg → md → sm) → 색 → 상태 변형.
+
+```tsx
+className={cn(
+  "relative border-t px-4 py-10 text-center text-[20px] leading-[1.2]",  // 1. 기본
+  "lg:absolute lg:top-[16%] lg:left-1/2 lg:w-75 lg:border-0 lg:p-0",     // 2. lg
+  "md:h-130",                                                            // 3. md
+  BORDER.line,                                                           // 4. 색
+  TEXT.ink,
+  "motion-reduce:lg:h-auto",                                             // 5. 상태
+  className,                                                             // 6. 외부 주입
+)}
+```
+
+Tailwind는 클래스 나열 순서가 CSS 우선순위에 영향을 주지 않으므로 이 정렬은
+**순수하게 가독성용이며 렌더 결과를 바꾸지 않는다**. 단 `cn()`의 tailwind-merge는
+같은 variant + 같은 속성끼리만 병합하므로, 한 줄 안의 순서는 임의로 바꾸지 말 것.
+
+### 9.B 색은 `src/constants/colors.ts`에서만 가져온다
+
+`bg-black`, `text-foreground`, `border-header-line` 같은 색 클래스를 컴포넌트에
+직접 쓰지 않는다. 전부 상수 맵 경유.
+
+```ts
+COLOR; // 16진수 원본값. GSAP 트윈 등 JS에서 색이 필요할 때
+BG; // bg-[#ffffff] / bg-[#0a0a0a] / bg-[#000000]
+TEXT; // text-[#0a0a0a] / hover:text-[#0a0a0a]/55 / text-[#737373]
+BORDER; // border-[#000000] (헤더 괘선) / border-[#e5e5e5] (내부 얇은 선)
+OUTLINE; // outline-[#a1a1a1] (포커스 링)
+```
+
+**왜 클래스 문자열을 통째로 상수에 넣는가**: Tailwind 스캐너는 소스에서 완성된
+클래스 문자열을 찾는다. `bg-[${COLOR.white}]` 처럼 템플릿 리터럴로 만들면
+클래스를 못 찾아 **CSS가 아예 생성되지 않는다.** 그래서 헥사값이 `COLOR`와
+클래스 맵 두 곳에 적혀 있다. 색을 바꿀 때는 둘 다 고칠 것.
+
+**예외**: `transparent`, `currentColor` 는 헥사값이 없는 키워드라 팔레트 대상이
+아니다. `lg:bg-transparent` 처럼 그대로 쓴다.
+
+### 9.C globals.css 토큰은 팔레트의 사본이다
+
+shadcn `ui/` 컴포넌트는 `--background`, `--border` 같은 CSS 변수를 쓴다.
+이 값들을 `COLOR`와 **같은 16진수**로 맞춰 두었다(원래 oklch였고, Tailwind
+neutral 스케일과 동일한 값이라 렌더 결과는 그대로다). 팔레트를 바꾸면
+`globals.css`의 `:root` 블록도 함께 고쳐야 두 체계가 어긋나지 않는다.
+
+`.dark` 블록도 16진수로 바꿔뒀지만 현재 라이트 모드 고정이라 활성화되지 않는다.
+
+**주의**: shadcn init이 `--font-sans: var(--font-sans)` 라는 자기참조를 넣어둬서
+Geist가 적용되지 않고 있었다. `--font-sans: var(--font-geist-sans)`로 고쳐둠. 되돌리지 말 것.
+
+`--header-line`은 `@theme inline`으로 `border-header-line` 유틸리티를 만들지만,
+컴포넌트에서는 `BORDER.line`을 쓴다. 변수는 `ui/` 쪽 호환용으로 남겨둔 것.
+
+### 헤더 치수 (레퍼런스 실측)
+
+| 항목        | 값                                                       |
+| ----------- | -------------------------------------------------------- |
+| 높이        | 모바일 48px(+8px 인셋 플로팅) / 데스크톱 60px※           |
+| 브랜드 칼럼 | 정확히 4/12 = 33.33%                                     |
+| 메뉴 간격   | 첫 항목 `ml-7.5`, 이후 `ml-9`, 각 항목 `px-2.5`          |
+| 우측 셀     | `w-14` / `lg:w-35` (56px / 140px)                        |
+| 라벨        | `HEADER_LABEL` = 13px, uppercase, tracking 없음          |
+| 활성 메뉴   | `font-bold` (레퍼런스 `.banner__nav-item.active`와 동일) |
+
+※ 레퍼런스 원본은 40px이나 사용자가 60px로 조정. `main`의 `lg:pt-15`,
+`page.tsx`의 `lg:-mt-15`와 **세 값이 함께 움직여야 한다**.
+
+활성 메뉴 볼드 처리 시 글자 폭이 넓어져 nav가 흔들리는 문제가 있어,
+링크를 1칸 grid로 만들고 `invisible font-bold` 고스트를 겹쳐 폭을 고정했다.
+
+---
+
+## 10. 함정 모음 (같은 실수 반복 금지)
+
+### 10.0 Tailwind 임의값 경고는 꺼 두었다
+
+`max-w-[425px]`, `h-[378px]` 같은 px 임의값은 **레퍼런스에서 실측한 값**이라 의도적으로 유지한다.
+`max-w-106.25`로 바꾸면 숫자의 출처 추적이 끊긴다(§1의 rem 주의사항 참고).
+
+Tailwind IntelliSense가 이걸 계속 제안하므로 `.vscode/settings.json`에서 규칙을 껐다.
+
+```json
+{ "tailwindCSS.lint.suggestCanonicalClasses": "ignore" }
+```
+
+**부작용**: 이 규칙은 세분화 옵션이 없어서, `h-[100svh] → h-svh` 처럼
+**진짜 개선인 제안까지 함께 사라진다**. 끄기 전에 그런 케이스는 이미 정리했다
+(`h-svh`, `translate-y-[-40%]`). 앞으로 임의값을 새로 쓸 때는
+전용 유틸리티가 있는지(`svh`/`dvh`/`lvh`, `prose` 등) 직접 확인할 것.
+
+### 10.1 next/image 캐시는 파일 내용을 안 본다
+
+`.next/cache/images`의 키는 **URL + width + quality**다. 파일을 교체해도 캐시가 히트한다.
+
+```bash
+rm -rf .next/cache/images   # 후 브라우저 하드 리로드(⌘⇧R)
+```
+
+운영까지 확실히 하려면 파일명에 버전을 붙여 URL을 바꾼다.
+
+### 10.2 헤드리스 브라우저에서 GSAP 값이 전부 0으로 읽힌다
+
+스크린샷을 강제하지 않으면 rAF가 돌지 않아 ScrollSmoother/ScrollTrigger가 멈춘 것처럼 보인다.
+**코드 버그로 오인하기 쉽다.** 측정 루프에 `Page.captureScreenshot`을 끼워 프레임을 강제할 것.
+
+### 10.3 마스크 안의 요소는 IntersectionObserver에 절대 안 걸린다
+
+`translateY(100%)`로 내려간 요소는 자기 마스크의 클립 영역 밖이라
+교차 비율이 영구히 0이다. `whileInView`/IO 기반 리빌을 쓸 거면
+**트리거를 마스크 자체에 걸고** 자식은 variant 전파로 움직여야 한다.
+(현재는 GSAP 스크럽이라 해당 없음. IO 리빌을 추가할 때 재발 주의.)
+
+### 10.4 shadcn `form`은 현재 스타일에 존재하지 않는다
+
+`radix-nova` 레지스트리의 `form.json`은 **빈 스텁**이다(`field` 컴포넌트로 대체되는 중).
+`npx shadcn add form`이 조용히 아무것도 설치하지 않는다.
+동일 구성(Radix + Tailwind v4)인 `new-york-v4`에서 직접 받았다.
+
+```bash
+npx shadcn@latest add https://ui.shadcn.com/r/styles/new-york-v4/form.json
+```
+
+`label`은 `radix-nova`에서 먼저 설치해 덮어쓰기를 피했다.
+
+### 10.5 shadcn 생성물 린트 예외
+
+`src/components/ui/**`는 `npx shadcn add`로 재생성되는 벤더 코드라 손대지 않는다.
+carousel.tsx가 `react-hooks/set-state-in-effect`에 걸려서
+`eslint.config.mjs`에 **해당 디렉토리 + 해당 룰만** 끄는 override를 두었다.
+인라인 주석은 재생성 시 사라지므로 config로 처리한 것.
+
+---
+
+## 11. 검증 방법
+
+빌드가 통과한다고 애니메이션이 도는 것은 아니다. 실제 브라우저를 CDP로 몰아 확인한다.
+
+```bash
+# 1) 헤드리스 크롬을 디버깅 포트로 띄운다
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  --headless --disable-gpu --hide-scrollbars \
+  --remote-debugging-port=9333 --user-data-dir=<tmp> about:blank &
+
+# 2) Node 22의 내장 WebSocket으로 CDP에 붙는다 (puppeteer 불필요)
+#    Page.navigate → Emulation.setDeviceMetricsOverride → window.scrollTo
+#    → captureScreenshot 루프(프레임 강제) → Runtime.evaluate로 계산값 읽기
+```
+
+세션 스크래치패드에 만들어 둔 스크립트들(재작성해도 무방):
+
+| 스크립트         | 용도                                           |
+| ---------------- | ---------------------------------------------- |
+| `shoot.mjs`      | 스크롤 위치별 스크린샷                         |
+| `measure.mjs`    | 프레임 강제 + 스크린샷 + 계산 스타일 동시 수집 |
+| `probe.mjs`      | 임의 JS 평가 (`awaitPromise: true` 필요)       |
+| `refpin.mjs`     | 레퍼런스 사이트의 핀 구간 실측                 |
+| `transition.mjs` | 전환 중 `#view` opacity 시계열 샘플링          |
+
+전환 검증 예시 출력:
+
+```
+== 메뉴 클릭 -> /shop ==
+  /      | 0.62 | LOCK      ← 이전 페이지 페이드아웃
+  /      | 0.01 | LOCK
+  /shop  | 0.20 | LOCK      ← 콘텐츠 교체
+  /shop  | 1.00 | -         ← 락 해제
+```
+
+---
+
+## 12. 현재 상태와 다음 작업
+
+### 완료
+
+- 공통 헤더 (데스크톱/모바일, 활성 상태, 시트 메뉴)
+- 홈 히어로 섹션 (진입 애니메이션 + 스크롤 디밍 + 패럴랙스)
+- 홈 제품 설명 섹션 (600vh 핀 스크럽, 8비트 타임라인)
+- ScrollSmoother 관성 스크롤
+- 페이지 전환 (링크 클릭 + 뒤로가기)
+
+### 미완 / 임시
+
+| 항목                                      | 상태                                                                                           |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `/about` `/shop` `/admin` `/login` `/bag` | **자리표시 스텁**. 제목 한 줄뿐                                                                |
+| 제품 섹션 카피                            | **전부 예시 문구**. "해발 500m", "곡우 전" 등 수치는 지어낸 값이다. 각주에 그 사실을 명시해 둠 |
+| `BAG (0)` 개수                            | `bagCount` prop 하드코딩. 장바구니 상태 연동 필요                                              |
+| 다크모드                                  | 토큰은 정의돼 있으나 실제 검증 안 함. `next-themes` 설치만 된 상태 (ThemeProvider 미설치)      |
+| 푸터                                      | 없음                                                                                           |
+
+### 이어서 할 때 참고
+
+- 레퍼런스의 나머지 섹션(3, 5)은 **스크롤로 스크럽되는 mp4**다.
+  `section-3-desktop-...mp4`(6초, 154프레임, pauseFrame 72),
+  `section-5-desktop-...mp4`(14초, 490프레임). `currentTime`을 scrub으로 트윈한다.
+  같은 방식을 쓰려면 영상 에셋이 먼저 필요하다.
+- 새 섹션을 추가할 때는 §4 합성 순서와 §5 sticky 금지 규칙을 먼저 확인할 것.
+- 패키지 매니저는 **npm**으로 통일한다(`package-lock.json` 존재). yarn 혼용 금지.

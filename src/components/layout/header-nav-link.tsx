@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { OUTLINE, TEXT } from "@/constants/colors";
 import { cn } from "@/lib/utils";
-import { HEADER_LABEL, type NavItem } from "./nav-items";
+import { HEADER_LABEL, type NavItem } from "../../constants/nav-items";
 
 export function useIsActive(href: string) {
   const pathname = usePathname();
@@ -25,9 +26,12 @@ export function HeaderNavLink({
       className={cn(
         HEADER_LABEL,
         // Reference nav items are full-height hit areas with 10px side padding.
-        "grid h-full items-center px-2.5 text-foreground",
-        "transition-colors duration-150 hover:text-foreground/55",
-        "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
+        "grid h-full items-center px-2.5",
+        TEXT.ink,
+        TEXT.inkHover,
+        "transition-colors duration-150",
+        "focus-visible:outline-2 focus-visible:-outline-offset-2",
+        OUTLINE.ring,
         className,
       )}
     >
