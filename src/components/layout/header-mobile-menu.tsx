@@ -28,7 +28,7 @@ import { useIsActive } from "./header-nav-link";
  */
 const SHEET_ACTION = cn(
   HEADER_LABEL,
-  "flex h-11 items-center justify-center border uppercase",
+  "flex h-11 items-center justify-center border",
   BORDER.line,
   "transition-colors duration-150 active:translate-y-px",
   "focus-visible:outline-2 focus-visible:-outline-offset-2",

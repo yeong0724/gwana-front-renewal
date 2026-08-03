@@ -63,3 +63,12 @@ export const BORDER = {
 export const OUTLINE = {
   ring: "outline-[#a1a1a1]",
 } as const;
+
+/**
+ * 사진 위에 흰 글자를 올릴 때 쓰는 가림막.
+ * 히어로 사진의 밝은 부분은 흰 글자와 대비가 1.01:1까지 떨어져 글자가 사라진다.
+ */
+export const SCRIM = {
+  heroBottom:
+    "bg-gradient-to-t from-[#000000]/70 via-[#000000]/32 to-transparent",
+} as const;

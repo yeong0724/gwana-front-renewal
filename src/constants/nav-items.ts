@@ -9,10 +9,13 @@ export const NAV_ITEMS: NavItem[] = [
   { label: "ADMIN", href: "/admin" },
 ];
 
-export const LOGIN_ITEM: NavItem = { label: "LOG IN", href: "/login" };
+export const LOGIN_ITEM: NavItem = { label: "Log In", href: "/login" };
 
 /** 모바일 시트 하단에서 LOG IN과 짝을 이루는 계정 진입점. */
-export const ACCOUNT_ITEM: NavItem = { label: "MY ACCOUNT", href: "/account" };
+export const ACCOUNT_ITEM: NavItem = {
+  label: "Go to Smart Store",
+  href: "/account",
+};
 
 /**
  * Header type scale, matched to the reference bar: 12px uppercase, no tracking,
