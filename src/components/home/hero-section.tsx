@@ -189,7 +189,7 @@ export function HeroSection() {
       >
         <Image
           ref={imageRef}
-          src="/home/main_1.jpg"
+          src="/home/main_1.webp"
           alt="산비탈에 층층이 이어진 가와나 차밭"
           fill
           priority
