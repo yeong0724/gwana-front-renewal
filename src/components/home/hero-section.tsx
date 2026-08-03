@@ -17,7 +17,7 @@ gsap.registerPlugin(ScrollTrigger, ScrollSmoother, CustomEase);
  * 워드마크는 이름과 업종을 분리한 2단 락업이다. 한 줄에 같은 크기로 늘어놓으면
  * 브랜드 마크가 아니라 캡션처럼 읽힌다. 크기 차(약 8배)가 위계를 만든다.
  */
-const WORDMARK = "Gwana";
+const WORDMARK = "관아수제차";
 const WORDMARK_SUB = "TEA HOUSE";
 
 /*
@@ -189,7 +189,7 @@ export function HeroSection() {
       >
         <Image
           ref={imageRef}
-          src="/home/main_1.webp"
+          src="/home/main_2.webp"
           alt="산비탈에 층층이 이어진 가와나 차밭"
           fill
           priority
@@ -216,8 +216,8 @@ export function HeroSection() {
             {/* 이름. 큰 글자는 자간을 조여야 덩어리로 읽힌다. */}
             <span
               className={cn(
-                "block whitespace-nowrap text-[18vw] leading-[0.82] font-extrabold",
-                "lg:text-[10vw]",
+                "block whitespace-nowrap text-[14vw] leading-[0.82] font-extrabold",
+                "lg:text-[6vw]",
               )}
             >
               <WordmarkChars text={WORDMARK} />
@@ -226,7 +226,7 @@ export function HeroSection() {
             {/* 업종. 자간을 벌려 이름 아래를 받치는 선처럼 놓는다. */}
             <span
               className={cn(
-                "mt-[-0.1em] ml-[1.2em] block overflow-hidden pt-[0.25em] pb-[0.06em] text-[3.4vw] leading-none font-medium tracking-[0.34em] uppercase",
+                "mt-[-0.1em] ml-[0.7em] block overflow-hidden pt-[0.25em] pb-[0.06em] text-[3.4vw] leading-none font-medium tracking-[0.34em] uppercase",
                 "lg:text-[2vw]",
               )}
             >

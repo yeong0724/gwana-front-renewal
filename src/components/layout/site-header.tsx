@@ -28,7 +28,7 @@ export function SiteHeader({ bagCount = 0 }: { bagCount?: number }) {
     <header
       className={cn(
         // Mobile: floating bar inset 8px, ruled on all four sides.
-        "fixed inset-x-2 top-2 z-50 h-10 border",
+        "fixed inset-x-2 top-2 z-50 h-9 border",
         // Desktop: edge to edge at 60px, only the bottom rule.
         "lg:inset-x-0 lg:top-0 lg:h-12 lg:border-0 lg:border-b",
         BG.page,

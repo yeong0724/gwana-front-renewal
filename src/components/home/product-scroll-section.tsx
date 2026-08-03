@@ -13,10 +13,6 @@ import { cn } from "@/lib/utils";
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
 /** TODO: placeholder product copy, replace with the real product claims. */
-const TITLE = "지리산 화개골, 사람 손으로 딴 잎";
-const BODY = "가와나의 차는 한 해 한 번, 곡우 전에 딴 어린 잎으로만 만듭니다.";
-const STAT_ONE = "해발 500m 야생 차밭";
-const STAT_TWO = "곡우 전에 딴 그 해 첫 잎";
 const REFERENCE =
   "산지와 수확 시기는 자리를 보여주기 위한 예시 문구입니다. 실제 제품 정보로 교체해 주세요.";
 
@@ -165,11 +161,13 @@ export function ProductScrollSection() {
           <h2
             className={cn(
               "mx-auto max-w-106.25 text-center text-[40px] leading-none tracking-[-0.01em]",
-              "lg:mx-0 lg:max-w-none lg:text-left lg:text-[5.5556vw]",
+              "lg:mx-0 lg:max-w-none lg:text-left lg:text-[5vw]",
               TEXT.ink,
             )}
           >
-            {TITLE}
+            지리산 화개골,
+            <br />
+            사람 손으로 딴 잎
           </h2>
         </div>
 
@@ -199,7 +197,7 @@ export function ProductScrollSection() {
               alt="가와나 티하우스 차통"
               width={1024}
               height={1024}
-              sizes="(min-width: 1024px) 48vh, 62vw"
+              sizes="(min-width: 1024px) 64vh, 62vw"
               loading="eager"
               fetchPriority="high"
               className={cn(
@@ -218,7 +216,8 @@ export function ProductScrollSection() {
               TEXT.ink,
             )}
           >
-            {BODY}
+            관아의 차는 한 해 한 번, <br />
+            곡우 전에 딴 어린 잎으로만 만듭니다.
           </p>
 
           {/* Static on desktop so the statements anchor to the panel itself. */}
@@ -233,25 +232,25 @@ export function ProductScrollSection() {
             <p
               ref={statOneRef}
               className={cn(
-                "w-1/2 px-4 py-10 text-center text-[32px] leading-none tracking-[-0.01em]",
+                "w-1/2 px-4 py-10 text-center text-[28px] leading-none tracking-[-0.01em]",
                 "lg:absolute lg:top-1/2 lg:left-[5vw] lg:w-[28vw] lg:translate-y-[-40%] lg:bg-transparent lg:p-0 lg:text-left lg:text-[4.6vw]",
                 BG.page,
                 TEXT.ink,
               )}
             >
-              {STAT_ONE}
+              해발 500m 야생 차밭
             </p>
 
             <p
               ref={statTwoRef}
               className={cn(
-                "w-1/2 px-4 py-10 text-center text-[32px] leading-none tracking-[-0.01em]",
+                "w-1/2 px-4 py-10 text-center text-[28px] leading-none tracking-[-0.01em]",
                 "lg:absolute lg:top-1/2 lg:right-[5vw] lg:w-[28vw] lg:translate-y-[-40%] lg:bg-transparent lg:p-0 lg:text-left lg:text-[4.6vw]",
                 BG.page,
                 TEXT.ink,
               )}
             >
-              {STAT_TWO}
+              곡우 전에 딴 그 해 첫 잎
             </p>
           </div>
 

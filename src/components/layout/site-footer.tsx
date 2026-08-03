@@ -72,7 +72,7 @@ export function SiteFooter() {
   return (
     <footer
       className={cn(
-        "border-t text-[13px] leading-[1.5]",
+        "border-t text-[13px] leading-normal",
         BG.page,
         BORDER.line,
         TEXT.ink,
@@ -81,10 +81,7 @@ export function SiteFooter() {
       {/* 브랜드 칼럼은 헤더와 같은 4/12 = 33.33%. 오른쪽은 괘선으로 나눈다. */}
       <div className={cn("lg:flex lg:items-stretch")}>
         <div
-          className={cn(
-            "px-4 py-8",
-            "lg:w-1/3 lg:shrink-0 lg:px-5 lg:py-12",
-          )}
+          className={cn("px-4 py-8", "lg:w-1/3 lg:shrink-0 lg:px-5 lg:py-12")}
         >
           <Link
             href="/"
