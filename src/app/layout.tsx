@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { PageTransition } from "@/components/layout/page-transition";
+import { SiteFooter } from "@/components/layout/site-footer";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SmoothScroll } from "@/components/layout/smooth-scroll";
 import { Toaster } from "@/components/ui/shadcn-ui/sonner";
@@ -47,10 +48,16 @@ export default function RootLayout({
         {/* Fixed chrome stays outside the smoother, which transforms its content. */}
         <SiteHeader />
         <SmoothScroll>
-          {/* Clears the fixed bar: 48px + 8px inset on mobile, 60px on desktop. */}
-          <main className={cn("pt-14", "lg:pt-15")}>
-            <PageTransition>{children}</PageTransition>
-          </main>
+          {/*
+           * The footer sits inside #view so it fades with the route instead of
+           * jumping when the document height changes, but outside <main> so it
+           * still resolves as the page's contentinfo landmark.
+           */}
+          <PageTransition>
+            {/* Clears the fixed bar: 48px + 8px inset on mobile, 60px on desktop. */}
+            <main className={cn("pt-14", "lg:pt-15")}>{children}</main>
+            <SiteFooter />
+          </PageTransition>
         </SmoothScroll>
         <Toaster />
       </body>
