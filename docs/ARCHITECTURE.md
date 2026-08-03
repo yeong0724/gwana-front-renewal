@@ -67,14 +67,23 @@ ScrollSmoother / SplitText / CustomEase는 예전엔 Club GreenSock 유료 플�
 ```
 src/
 ├─ app/
-│  ├─ layout.tsx              # 합성 순서가 핵심 (§4)
-│  ├─ page.tsx                # 홈: Hero + ProductScroll
+│  ├─ layout.tsx              # 셸. 합성 순서가 핵심 (§4)
 │  ├─ globals.css             # 토큰 + base 레이어
-│  ├─ about|shop|admin|login|bag/page.tsx   # 자리표시 스텁
+│  │
+│  ├─ (common)/               # 공통 헤더 + 푸터 계열 (§9.E)
+│  │  ├─ layout.tsx           #   <main> + SiteFooter
+│  │  ├─ page.tsx             #   홈: Hero + ProductScroll
+│  │  └─ about|shop|admin|login|bag|account|terms|privacy/page.tsx
+│  │
+│  └─ (non-common)/           # 단독 헤더 계열. 푸터 없음
+│     ├─ layout.tsx           #   <main> 만
+│     └─ payment/page.tsx     #   자리표시 스텁
 │
 ├─ components/
 │  ├─ layout/
-│  │  ├─ site-header.tsx      # 고정 헤더 (서버 컴포넌트)
+│  │  ├─ site-header.tsx      # 공통 고정 헤더 (서버 컴포넌트)
+│  │  ├─ payment-header.tsx   # 단독 고정 헤더 (서버 컴포넌트)
+│  │  ├─ chrome-header.tsx    # 경로로 둘 중 하나를 고르는 스위치 (클라이언트)
 │  │  ├─ site-footer.tsx      # 공통 푸터 (서버 컴포넌트, §9.D)
 │  │  ├─ header-nav-link.tsx  # 활성 상태 (클라이언트)
 │  │  ├─ header-mobile-menu.tsx
@@ -102,16 +111,19 @@ src/
 
 ```
 <body>
-  <SiteHeader />              ← position:fixed. 반드시 스무더 바깥
+  <ChromeHeader />            ← position:fixed. 반드시 스무더 바깥
   <SmoothScroll>              ← #smooth-wrapper > #smooth-content
     <SmoothScrollInit />      ← content의 "첫 번째 자식"이어야 함
     <PageTransition>          ← #view. 여기만 페이드된다
-      <main className="pt-14 lg:pt-15">{children}</main>
-      <SiteFooter />          ← #view 안, main 밖 (§9.D)
+      {children}              ← 계열 layout이 여기 들어온다 (§9.E)
     </PageTransition>
   </SmoothScroll>
   <Toaster />                 ← fixed. 스무더 바깥
 </body>
+
+계열 layout이 채우는 부분:
+  (common)      → <main className="pt-14 lg:pt-15">{page}</main> + <SiteFooter />
+  (non-common)  → <main className="pt-14 lg:pt-15">{page}</main>
 ```
 
 ### 왜 fixed 요소가 스무더 바깥이어야 하는가
@@ -469,6 +481,54 @@ Geist가 적용되지 않고 있었다. `--font-sans: var(--font-geist-sans)`로
 사업자 정보와 법적 고지 링크는 `src/constants/business.ts` 한 곳에서 온다.
 푸터와 약관/처리방침 페이지가 같은 값을 읽으므로 여기만 고치면 된다.
 
+### 9.E 라우트 그룹: (common) / (non-common)
+
+페이지를 chrome 기준으로 두 계열로 나눈다. 괄호 그룹이라 **URL에는 영향이 없다.**
+
+| 계열           | 헤더            | 푸터   | 라우트                                        |
+| -------------- | --------------- | ------ | --------------------------------------------- |
+| `(common)`     | `SiteHeader`    | 있음   | `/`, about, shop, bag, account, login, admin, terms, privacy |
+| `(non-common)` | `PaymentHeader` | 없음   | `/payment`                                    |
+
+**무엇이 어디에 사는지가 제약으로 정해져 있다.**
+
+- **헤더는 root layout에만 둘 수 있다.** `position: fixed`가 `#smooth-content`
+  안에서는 뷰포트 기준이 아니게 되는데(§4), 계열 layout은 항상 `#view` 안,
+  즉 스무더 안쪽에서 렌더된다. 그래서 계열 layout에 헤더를 넣으면 스크롤과
+  함께 밀려 올라간다.
+- **`<main>`과 푸터는 계열 layout이 갖는다.** 둘 다 `#view` 안에 있어야 하고
+  (§9.D), 계열마다 달라지는 것이 정확히 이 둘이다. 상단 패딩도 계열별로
+  헤더 높이를 따라갈 수 있게 여기 둔다.
+- **`SmoothScroll`과 `PageTransition`은 root에 못 박아 둔다.** 계열 layout으로
+  내리면 계열을 넘나들 때 언마운트되어 ScrollSmoother가 kill/재생성되고,
+  다시 마운트된 `PageTransition`은 `isFirstRender` 가드에 걸려 **페이드인을
+  통째로 건너뛴다.**
+
+**헤더 선택은 `constants/route-chrome.ts`의 접두사 목록이 한다.** root layout은
+서버 컴포넌트라 pathname을 모르므로, `ChromeHeader`(유일한 클라이언트 조각)가
+`usePathname()`으로 고른다. 두 헤더는 prop으로 받은 RSC 트리라 서버 컴포넌트로
+남는다. `(non-common)/` 아래 라우트를 추가하면 **접두사 목록에도 넣어야 한다.**
+
+parallel routes(`@header` 슬롯)를 쓰면 이 동기화가 사라지지만, 슬롯은 소프트
+내비게이션에서 매칭에 실패하면 **직전 슬롯을 그대로 붙들고 있는다**(`default.tsx`는
+하드 내비게이션 폴백일 뿐이다. Next 공식 문서 Parallel Routes > Behavior).
+계열마다 catch-all 페이지를 깔아야 해서 헤더가 둘뿐인 지금은 비용이 더 크다.
+계열이 늘면 그때 옮기는 것이 맞다.
+
+**실측 검증** (`/bag` ↔ `/payment` 소프트 내비게이션, 60ms 간격 샘플링):
+
+```
+== (common) -> (non-common) ==
+  /bag      | 0.42 | LOCK | SiteHeader    | footer    | smoother-kept
+  /bag      | 0.09 | LOCK | SiteHeader    | footer    | smoother-kept
+  /payment  | 0.00 | LOCK | PaymentHeader | no-footer | smoother-kept   ← 교체는 opacity 0에서
+  /payment  | 0.73 | LOCK | PaymentHeader | no-footer | smoother-kept
+  /payment  | 1.00 | -    | PaymentHeader | no-footer | smoother-kept
+```
+
+헤더 교체가 `opacity 0` 지점에서 일어나므로 사용자는 헤더가 바뀌는 순간을 보지
+않는다. 스무더는 양방향 모두 유지된다.
+
 ---
 
 ## 10. 함정 모음 (같은 실수 반복 금지)
@@ -579,6 +639,7 @@ carousel.tsx가 `react-hooks/set-state-in-effect`에 걸려서
 - ScrollSmoother 관성 스크롤
 - 페이지 전환 (링크 클릭 + 뒤로가기)
 - 공통 푸터 (사업자 정보 + 약관/처리방침 진입, §9.D)
+- 라우트 그룹 분리 `(common)` / `(non-common)` + 경로별 헤더 전환 (§9.E)
 
 ### 미완 / 임시
 
@@ -586,6 +647,8 @@ carousel.tsx가 `react-hooks/set-state-in-effect`에 걸려서
 | ----------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | `/about` `/shop` `/admin` `/login` `/bag` | **자리표시 스텁**. 제목 한 줄뿐                                                                |
 | `/terms` `/privacy`                       | **본문 없음**. 법적 효력이 있는 문서라 지어내지 않았다. 확정본을 받아 넣어야 한다               |
+| `/payment`                                | **자리표시 스텁**. `(non-common)` 계열 배선만 확인해 둔 상태                                    |
+| `PaymentHeader`                           | 로고만 있는 최소 형태. 로고는 홈 링크로 남겨 뒀다. 이탈을 막으려면 Link를 span으로 바꾼다      |
 | 통신판매업신고번호                        | 값을 못 받아 푸터에서 빠져 있다. 국내 커머스는 표기 의무가 있으므로 확인 필요                  |
 | 제품 섹션 카피                            | **전부 예시 문구**. "해발 500m", "곡우 전" 등 수치는 지어낸 값이다. 각주에 그 사실을 명시해 둠 |
 | `BAG (0)` 개수                            | `bagCount` prop 하드코딩. 장바구니 상태 연동 필요                                              |
