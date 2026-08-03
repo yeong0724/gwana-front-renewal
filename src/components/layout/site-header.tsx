@@ -60,7 +60,9 @@ export function SiteHeader({ bagCount = 0 }: { bagCount?: number }) {
               width={1726}
               height={676}
               priority
-              sizes="(min-width: 1024px) 61px, 72px"
+              /* 실제 렌더 폭. 로고 비율 2.553 × 높이(모바일 28px, 데스크톱 36px).
+                 이 값이 작으면 브라우저가 더 작은 후보를 받아 확대해 흐려진다. */
+              sizes="(min-width: 1024px) 92px, 72px"
               className={cn("h-7 w-auto", "lg:h-9")}
             />
           </Link>

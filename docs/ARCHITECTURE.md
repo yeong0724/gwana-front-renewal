@@ -168,13 +168,32 @@ gsap.matchMedia().add("(min-width: 1024px)", () => {
 트윈·ScrollTrigger·`gsap.set`으로 바꾼 인라인 스타일까지 전부 되돌린다.
 
 ```ts
-mm.add({ isDesktop: "(min-width: 1024px)", reduce: "(prefers-reduced-motion: reduce)" },
+mm.add({
+    isDesktop: "(min-width: 1024px)",
+    isMobile: "(max-width: 1023px)",   // 여집합을 반드시 적는다. 아래 함정 참고
+    reduce: "(prefers-reduced-motion: reduce)",
+  },
   (ctx) => {
     const { isDesktop, reduce } = ctx.conditions as { isDesktop: boolean; reduce: boolean };
     ...
     return cleanup;          // 조건이 바뀌면 자동 호출
   },
   scopeRef);                 // 세 번째 인자는 scope
+```
+
+**함정 1: 조건의 여집합을 빼먹으면 모바일 분기가 죽는다.**
+`mm.add`는 조건 중 **하나라도 맞을 때만** 콜백을 부른다. `isDesktop`과 `reduce`만
+적어두면, 모션 설정을 건드리지 않은 좁은 화면 사용자는 맞는 조건이 하나도 없어서
+콜백이 아예 실행되지 않는다. `if (!isDesktop) { ... }` 안의 코드는 조용히 죽는다.
+
+**함정 2: revert가 인라인 스타일을 지우는 게 아니라 "시작값"을 되써 넣는다.**
+`.to(el, { width: "100%" })` 같은 트윈을 되돌리면 gsap은 데스크톱에서 읽은 시작값
+(`width: 50%`)을 인라인으로 다시 적는다. lg에서만 맞는 값이라 좁은 화면에서는
+패널이 반쪽으로 남는다. 창을 데스크톱 → 모바일로 줄일 때만 재현된다(새로고침하면
+멀쩡해서 놓치기 쉽다). 모바일 분기 진입 시 해당 속성을 명시적으로 지울 것:
+
+```ts
+if (!isDesktop) gsap.set(el, { clearProps: "width,borderLeftColor" });
 ```
 
 ---

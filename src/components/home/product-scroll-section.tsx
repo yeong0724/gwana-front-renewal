@@ -39,11 +39,15 @@ export function ProductScrollSection() {
     mm.add(
       {
         isDesktop: "(min-width: 1024px)",
+        // 데스크톱의 여집합을 명시해야 한다. 조건이 하나도 맞지 않으면 gsap은
+        // 콜백을 아예 부르지 않으므로, 이게 없으면 좁은 화면 분기가 죽는다.
+        isMobile: "(max-width: 1023px)",
         reduce: "(prefers-reduced-motion: reduce)",
       },
       (context) => {
         const { isDesktop, reduce } = context.conditions as {
           isDesktop: boolean;
+          isMobile: boolean;
           reduce: boolean;
         };
 
@@ -56,6 +60,17 @@ export function ProductScrollSection() {
         ].map((el) => SplitText.create(el, { type: "lines", mask: "lines" }));
         const [bodySplit, statOneSplit, statTwoSplit] = splits;
         const cleanup = () => splits.forEach((split) => split.revert());
+
+        if (!isDesktop) {
+          /*
+           * 데스크톱 타임라인을 되돌릴 때 gsap은 패널의 시작값(width: 50%,
+           * 검은 좌측 테두리)을 인라인으로 다시 써 넣는다. lg에서만 맞는 값이라
+           * 좁은 화면에서는 패널이 반쪽으로 남는다. 분기 진입 즉시 지운다.
+           */
+          gsap.set(detailsRef.current, {
+            clearProps: "width,borderLeftColor",
+          });
+        }
 
         if (reduce) return cleanup;
 
