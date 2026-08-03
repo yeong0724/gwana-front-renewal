@@ -34,6 +34,10 @@ export type ColorName = keyof typeof COLOR;
 export const BG = {
   page: "bg-[#ffffff]",
   ink: "bg-[#0a0a0a]",
+  /** 잉크 면의 호버 상태. */
+  inkHover: "hover:bg-[#0a0a0a]/85",
+  /** 흰 면 위 옅은 호버. */
+  hairlineHover: "hover:bg-[#e5e5e5]/60",
   black: "bg-[#000000]",
   transparent: "bg-transparent",
 } as const;
