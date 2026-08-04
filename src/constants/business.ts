@@ -34,11 +34,51 @@ export const CONTACT_FIELDS: BusinessField[] = [
   },
 ];
 
-/** 푸터 우측 셀. 헤더의 LOG IN / BAG 셀과 같은 폭·괘선을 쓴다. */
+/** 푸터 하단 바의 법적 고지 링크. */
 export const LEGAL_ITEMS = [
   { label: "이용약관", href: "/terms" },
   { label: "개인정보처리방침", href: "/privacy" },
 ] as const;
+
+export type FooterColumn = {
+  title: string;
+  items: readonly { label: string; href: string }[];
+};
+
+/**
+ * 푸터 링크 칼럼.
+ *
+ * 레퍼런스는 `Info / Social Media / 브랜드` 세 벌로 나눈다. 우리도 같은
+ * 세 축을 쓰되, 아직 만들지 않은 페이지로는 링크하지 않는다. 지금 있는
+ * 라우트만 적어 두고 페이지가 생길 때 여기에 줄을 추가한다.
+ *
+ * SNS 계정은 아직 받지 못했다. 계정이 정해지면 `소셜` 칼럼을 이 배열에
+ * 추가한다(빈 칼럼을 미리 깔아 두면 죽은 링크가 배포된다).
+ */
+export const FOOTER_COLUMNS: readonly FooterColumn[] = [
+  {
+    title: "쇼핑",
+    items: [
+      { label: "전체 상품", href: "/shop" },
+      { label: "장바구니", href: "/bag" },
+      { label: "주문 · 결제", href: "/payment" },
+    ],
+  },
+  {
+    title: "계정",
+    items: [
+      { label: "로그인", href: "/login" },
+      { label: "내 계정", href: "/account" },
+    ],
+  },
+  {
+    title: "브랜드",
+    items: [
+      { label: "관아수제차 소개", href: "/about" },
+      { label: "관리자", href: "/admin" },
+    ],
+  },
+];
 
 /** 로고 아래 한 줄. layout.tsx의 metadata.description과 같은 문장. */
 export const BRAND_LINE = "지리산 화개골에서 손으로 딴 잎으로 만드는 차.";

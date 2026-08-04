@@ -2,41 +2,64 @@
 
 > 이 문서는 다음 세션에서 맥락 없이 읽어도 이어서 작업할 수 있도록 쓴 것이다.
 > "무엇을 했는가"보다 **"왜 그렇게 했는가"** 와 **"어디서 깨지는가"** 를 남긴다.
-> 마지막 갱신: 2026-08-03
+> 마지막 갱신: 2026-08-04
 
 ---
 
-## 1. 이 프로젝트가 무엇인가
+## 0. 이 브랜치는 디자인 v2다
 
-가와나 티하우스(한국 차 브랜드)의 커머스 프론트엔드.
-디자인/인터랙션 레퍼런스는 **https://postevand.com** (덴마크 생수 브랜드, Shopify Liquid + GSAP 3.11.3).
+`feature/design-v2` 는 **레퍼런스를 갈아엎은 갈래**다.
 
-레퍼런스를 "느낌만 참고"하는 것이 아니라 **수치까지 복제**하는 것이 이 프로젝트의 방침이다.
-그래서 아래 규칙이 적용된다.
+| 갈래           | 레퍼런스                             | 언어                                                      |
+| -------------- | ------------------------------------ | --------------------------------------------------------- |
+| `master` 계열  | https://postevand.com                | 검정 괘선 격자, 600vh 핀 스크럽, 흰 바탕                  |
+| **design-v2**  | **https://www.icebug.com/en-GB**     | 흰 바탕에 전면 사진, 모노 UI, 라운딩 0, 초록 푸터         |
+| 운영 확정      | 두 갈래를 비교해 나중에 고른다       |                                                            |
+| 유지된 것      | 라우트 구조, 페이지 전환, ScrollSmoother, (common)/(non-common) 분리      |
 
-- 값이 애매하면 추측하지 말고 **레퍼런스의 실제 CSS/JS를 파싱해서** 확인한다.
-- 레퍼런스와 다르게 갈 때는 **왜 다른지 근거를 남긴다** (§6).
+두 갈래는 **레이아웃 인프라를 공유한다**(§4, §5, §8). 바뀐 것은 팔레트·타입·섹션 구성이다.
+v1 로 되돌아가려면 `src/constants/{colors,typography,home-content}.ts`,
+`src/components/home/**`, `src/components/common/**`, 헤더/푸터를 되돌리면 되고
+`layout.tsx` / `page-transition.tsx` / `smooth-scroll.tsx` 는 건드릴 필요가 없다.
 
-### 레퍼런스 분석 방법
+---
 
-스크린샷 눈대중은 금지. 아래 순서로 실측한다.
+## 1. 레퍼런스 분석 방법
+
+스크린샷 눈대중은 금지. 이번 갈래는 아래 순서로 실측했다.
+
+**색은 픽셀이 아니라 computed style 에서 읽는다.** 이유는 §10.5.
 
 ```bash
-# 1. HTML + 테마 번들 내려받기
-curl -sL -A "Mozilla/5.0 ..." https://postevand.com/ -o pv.html
-grep -oE '/cdn/shop/t/5/assets/[a-zA-Z0-9._-]+\.(css|js)[^"]*' pv.html | sort -u
-curl -sL "https://postevand.com/cdn/shop/t/5/assets/app.css?v=..." -o app.css
-curl -sL "https://postevand.com/cdn/shop/t/5/assets/app.js?v=..."  -o app.js
-
-# 2. app.css는 정규식으로 규칙 추출, app.js는 minify 해제 후 클래스 단위로 읽기
+# 1. 헤드리스 크롬으로 레퍼런스를 띄운다
+# 2. **모달과 전면 오버레이를 먼저 닫는다** (이걸 빼먹으면 색이 전부 틀어진다)
+# 3. Runtime.evaluate 로 getComputedStyle 을 직접 읽는다
+#    -> html / 섹션 / 제품 타일 / 푸터의 backgroundColor
+# 4. 우리 화면도 같은 방식으로 읽어 숫자를 맞대 본다 (§11)
 ```
 
-`app.js`는 169KB 난독화 번들이지만 클래스 메서드명(`initScrollTriggersDesktop`, `animateHero`,
-`navigateTo`, `hide`, `show`)은 살아 있어서 검색으로 찾을 수 있다.
+`scratchpad/refmeasure.mjs` 가 1~3 을 한다(재작성해도 무방).
 
-**중요**: 레퍼런스는 `html { font-size: 62.5% }` 이므로 **1rem = 10px** 이다.
-우리 프로젝트는 기본 16px이므로 레퍼런스의 rem 값을 그대로 옮기면 안 된다.
-그래서 레퍼런스에서 가져온 치수는 전부 **px 또는 vw/vh 리터럴**로 적어두었다.
+### 실측 결과 (icebug.com, 1440 뷰포트, 오버레이 제거 후)
+
+| 항목             | 값                                | 출처                          |
+| ---------------- | --------------------------------- | ----------------------------- |
+| 페이지 바탕      | `#ffffff` (rgb 255,255,255)       | computed, html + 모든 섹션    |
+| 타일 면          | `#ececec` (rgb 236,236,236)       | computed, 제품 카드           |
+| 본문 글자        | `#262626`                         | computed textPrimary          |
+| 푸터/브랜드 면   | `#3c4c3d` (rgb 60,76,61)          | computed footer               |
+| 링크 강조        | `#c1242f`                         | computed link                 |
+| 라운딩           | `0px` (전 컴포넌트)               | computed                      |
+| 기본 단위        | `4px`                             | computed                      |
+| h1               | `88px` (= 6.11vw)                 | computed                      |
+| 헤더 높이        | `52px`                            | 스크린샷 실측                 |
+| UI 서체          | Suisse Intl Mono                  | computed font stack           |
+| 디스플레이 서체  | Suisse Intl SemiBold              | computed font stack           |
+
+**레퍼런스는 흰 바탕 사이트다.** 회색은 제품 타일 한 단(`#ececec`)뿐이고,
+타일 사이 이음매로 드러나는 흰색이 격자선 역할을 한다.
+
+우리 h1 은 실측 `87.84px`, 헤더 `52px` 로 재현됐다(§11).
 
 ---
 
@@ -54,11 +77,11 @@ curl -sL "https://postevand.com/cdn/shop/t/5/assets/app.js?v=..."  -o app.js
 ### 애니메이션 라이브러리는 GSAP 하나만 쓴다
 
 초기에 Motion(`motion/react`)으로 구현했다가 **전부 GSAP으로 교체하고 Motion은 제거**했다.
-이유는 레퍼런스가 GSAP이고, 특히 **ScrollSmoother**가 필요했기 때문이다(§5).
+이유는 v1 레퍼런스가 GSAP이고, 특히 **ScrollSmoother**가 필요했기 때문이다(§5).
 GSAP과 Motion을 같은 트리에서 섞으면 프레임을 두고 경합한다. 다시 섞지 말 것.
 
-ScrollSmoother / SplitText / CustomEase는 예전엔 Club GreenSock 유료 플러그인이었지만
-**GSAP 3.13부터 퍼블릭 npm 패키지에 무료로 포함**된다. 별도 라이선스나 레지스트리 설정 불필요.
+ScrollSmoother / SplitText / CustomEase는 **GSAP 3.13부터 퍼블릭 npm 패키지에
+무료로 포함**된다. 별도 라이선스나 레지스트리 설정 불필요.
 
 ---
 
@@ -68,44 +91,52 @@ ScrollSmoother / SplitText / CustomEase는 예전엔 Club GreenSock 유료 플�
 src/
 ├─ app/
 │  ├─ layout.tsx              # 셸. 합성 순서가 핵심 (§4)
-│  ├─ globals.css             # 토큰 + base 레이어
+│  ├─ globals.css             # 토큰 + base/utilities 레이어
 │  │
 │  ├─ (common)/               # 공통 헤더 + 푸터 계열 (§9.E)
-│  │  ├─ layout.tsx           #   <main> + SiteFooter
-│  │  ├─ page.tsx             #   홈: Hero + ProductScroll
+│  │  ├─ layout.tsx           #   <main pt-13> + SiteFooter
+│  │  ├─ page.tsx             #   홈: 섹션 8개 (§6)
 │  │  └─ about|shop|admin|login|bag|account|terms|privacy/page.tsx
 │  │
 │  └─ (non-common)/           # 단독 헤더 계열. 푸터 없음
-│     ├─ layout.tsx           #   <main> 만
+│     ├─ layout.tsx           #   <main pt-13> 만
 │     └─ payment/page.tsx     #   자리표시 스텁
 │
 ├─ components/
 │  ├─ layout/
-│  │  ├─ site-header.tsx      # 공통 고정 헤더 (서버 컴포넌트)
-│  │  ├─ payment-header.tsx   # 단독 고정 헤더 (서버 컴포넌트)
+│  │  ├─ header-shell.tsx     # ★ v2 신규. 헤더의 면색 상태만 담당 (클라이언트)
+│  │  ├─ site-header.tsx      # 좌 메뉴 / 중앙 로고 / 우 유틸리티 (서버)
+│  │  ├─ payment-header.tsx   # 단독 고정 헤더 (서버)
 │  │  ├─ chrome-header.tsx    # 경로로 둘 중 하나를 고르는 스위치 (클라이언트)
-│  │  ├─ site-footer.tsx      # 공통 푸터 (서버 컴포넌트, §9.D)
+│  │  ├─ site-footer.tsx      # 초록 푸터 (서버, §9.D)
 │  │  ├─ header-nav-link.tsx  # 활성 상태 (클라이언트)
 │  │  ├─ header-mobile-menu.tsx
-│  │  ├─ nav-items.ts         # 메뉴 정의 + HEADER_LABEL 타입 스케일
 │  │  ├─ smooth-scroll.tsx    # ScrollSmoother 래퍼 + 초기화
 │  │  ├─ page-transition.tsx  # 페이지 전환 (§8)
 │  │  └─ placeholder-page.tsx
 │  │
-│  ├─ home/
-│  │  ├─ hero-section.tsx           # 히어로 (§6.1)
-│  │  └─ product-scroll-section.tsx # 핀 고정 스크럽 섹션 (§6.2)
+│  ├─ common/                 # ★ v2 신규. 섹션들이 공유하는 조각
+│  │  ├─ ghost-button.tsx     #   테두리 버튼 (light / onImage)
+│  │  ├─ media-rail.tsx       #   가로 레일 + Prev/Next (클라이언트)
+│  │  ├─ placeholder-media.tsx#   에셋 없는 이미지 자리
+│  │  ├─ display-reveal.tsx   #   줄 마스크 리빌 (클라이언트)
+│  │  └─ headline-lines.tsx   #   헤드라인 줄 → 블록
 │  │
-│  └─ ui/                     # shadcn 생성물. 손으로 고치지 않는다
+│  ├─ home/                   # 홈 섹션 8개 (§6)
+│  └─ ui/shadcn-ui/           # shadcn 생성물. 손으로 고치지 않는다
 │
-└─ lib/
-   ├─ utils.ts                # cn()
-   └─ useIsomorphicLayoutEffect.ts
+└─ constants/
+   ├─ colors.ts               # 팔레트 단일 출처 (§9.B)
+   ├─ typography.ts           # 타입 스케일 단일 출처 (§9.C)
+   ├─ home-content.ts         # 홈 카피 + 자리표시 목록
+   ├─ nav-items.ts            # 메뉴 정의
+   ├─ business.ts             # 사업자 정보 + 푸터 칼럼
+   └─ route-chrome.ts         # 어떤 경로가 단독 헤더인가
 ```
 
 ---
 
-## 4. 레이아웃 합성 순서 (가장 중요)
+## 4. 레이아웃 합성 순서 (가장 중요, v1/v2 공통)
 
 `layout.tsx`의 중첩 순서는 **취향이 아니라 제약**이다. 바꾸면 조용히 깨진다.
 
@@ -122,22 +153,24 @@ src/
 </body>
 
 계열 layout이 채우는 부분:
-  (common)      → <main className="pt-14 lg:pt-15">{page}</main> + <SiteFooter />
-  (non-common)  → <main className="pt-14 lg:pt-15">{page}</main>
+  (common)      → <main className="pt-13">{page}</main> + <SiteFooter />
+  (non-common)  → <main className="pt-13">{page}</main>
 ```
 
 ### 왜 fixed 요소가 스무더 바깥이어야 하는가
 
 ScrollSmoother는 `#smooth-content`에 `transform: matrix3d(...)`를 걸어 스크롤을 흉내낸다.
 **transform이 걸린 조상 안에서는 `position: fixed`가 뷰포트가 아니라 그 조상 기준**이 된다.
-헤더를 안에 넣으면 스크롤과 함께 밀려 올라간다. 레퍼런스도 `<header id="banner">`를
-`#smooth-wrapper` **앞**에 둔다.
+헤더를 안에 넣으면 스크롤과 함께 밀려 올라간다.
+
+`HeaderShell` 도 같은 제약을 받는다. 클라이언트 컴포넌트지만 **root layout 에서만**
+렌더돼야 한다.
 
 ### 왜 SmoothScrollInit이 첫 번째 자식이어야 하는가
 
 React는 **자식의 layout effect를 부모보다 먼저** 실행한다.
 `SmoothScroll`이 children을 감싸는 구조에서 초기화를 부모 컴포넌트 본체에 두면,
-히어로/제품 섹션의 effect가 **스무더가 존재하기 전에** 실행된다. 결과:
+히어로 섹션의 effect가 **스무더가 존재하기 전에** 실행된다. 결과:
 
 - `ScrollSmoother.get()`이 `undefined` → 패럴랙스가 안 붙는다
 - 그 시점에 만들어진 ScrollTrigger는 **변형되지 않은 문서 좌표**를 기준으로 측정한다
@@ -145,39 +178,42 @@ React는 **자식의 layout effect를 부모보다 먼저** 실행한다.
 형제 컴포넌트의 effect는 렌더 순서대로 실행되므로, 초기화 전용 컴포넌트를
 `#smooth-content`의 첫 자식으로 렌더해 순서를 강제했다. 이 구조를 유지할 것.
 
+### 헤더 높이는 세 곳이 함께 움직인다
+
+`HEADER_HEIGHT`(= `h-13` = 52px, `header-shell.tsx` export) 를 바꾸면 아래도 같이 고친다.
+
+| 파일                          | 값                          |
+| ----------------------------- | --------------------------- |
+| `header-shell.tsx`            | `h-13`                      |
+| `(common)/layout.tsx`         | `pt-13`                     |
+| `(non-common)/layout.tsx`     | `pt-13`                     |
+| `(common)/page.tsx` (홈)      | `-mt-13`                    |
+| `placeholder-page.tsx`        | `min-h-[calc(100svh-3.25rem)]` |
+
+마지막 줄이 **푸터를 접힘선 아래로 밀어내는 장치**다. §10.6 참고.
+
 ---
 
-## 5. 스크롤 아키텍처
+## 5. 스크롤 아키텍처 (v1/v2 공통)
 
 ### ScrollSmoother
 
 ```ts
-// smooth-scroll.tsx, 레퍼런스 설정 그대로
+// smooth-scroll.tsx
 ScrollTrigger.config({ ignoreMobileResize: true });
 gsap.matchMedia().add("(min-width: 1024px)", () => {
-  const smoother = ScrollSmoother.create({
-    smooth: 1,
-    smoothTouch: 1,
-    effects: true,
-  });
+  const smoother = ScrollSmoother.create({ smooth: 1, smoothTouch: 1, effects: true });
   return () => smoother.kill();
 });
 ```
-
-`1024px 이상에서만` 생성하는 것도 레퍼런스와 동일하다.
 
 ### CSS sticky를 쓰면 안 된다
 
 핀 고정에 `position: sticky`를 쓰면 안 된다.
 **transform이 걸린 조상 안에서 sticky는 동작하지 않기 때문**이다.
-레퍼런스가 sticky 대신 ScrollTrigger `pin:`을 쓰는 이유가 이것이다.
-초기 Motion 구현에서 sticky를 썼다가 GSAP 전환 시 전부 `pin:`으로 교체했다.
+ScrollTrigger `pin:` 을 쓴다.
 
 ### 브레이크포인트 분기는 gsap.matchMedia()
-
-`useState` + `matchMedia` 커스텀 훅으로 분기하던 것을 `gsap.matchMedia()`로 통일했다.
-데스크톱 / 모바일 / `prefers-reduced-motion`을 한 콜백에서 받고, `mm.revert()` 한 번으로
-트윈·ScrollTrigger·`gsap.set`으로 바꾼 인라인 스타일까지 전부 되돌린다.
 
 ```ts
 mm.add({
@@ -196,13 +232,14 @@ mm.add({
 **함정 1: 조건의 여집합을 빼먹으면 모바일 분기가 죽는다.**
 `mm.add`는 조건 중 **하나라도 맞을 때만** 콜백을 부른다. `isDesktop`과 `reduce`만
 적어두면, 모션 설정을 건드리지 않은 좁은 화면 사용자는 맞는 조건이 하나도 없어서
-콜백이 아예 실행되지 않는다. `if (!isDesktop) { ... }` 안의 코드는 조용히 죽는다.
+콜백이 아예 실행되지 않는다.
+
+`display-reveal.tsx` 처럼 브레이크포인트 분기가 필요 없는 곳도
+`motion: "(prefers-reduced-motion: no-preference)"` 를 여집합으로 적어 두었다.
+빼면 **헤드라인이 마스크 안에 숨은 채로 남는다.**
 
 **함정 2: revert가 인라인 스타일을 지우는 게 아니라 "시작값"을 되써 넣는다.**
-`.to(el, { width: "100%" })` 같은 트윈을 되돌리면 gsap은 데스크톱에서 읽은 시작값
-(`width: 50%`)을 인라인으로 다시 적는다. lg에서만 맞는 값이라 좁은 화면에서는
-패널이 반쪽으로 남는다. 창을 데스크톱 → 모바일로 줄일 때만 재현된다(새로고침하면
-멀쩡해서 놓치기 쉽다). 모바일 분기 진입 시 해당 속성을 명시적으로 지울 것:
+모바일 분기 진입 시 해당 속성을 명시적으로 지울 것:
 
 ```ts
 if (!isDesktop) gsap.set(el, { clearProps: "width,borderLeftColor" });
@@ -210,142 +247,145 @@ if (!isDesktop) gsap.set(el, { clearProps: "width,borderLeftColor" });
 
 ---
 
-## 6. 섹션별 사양 (레퍼런스 실측값)
+## 6. 홈 섹션 구성 (v2)
 
-### 6.1 히어로 `hero-section.tsx`
+인접한 두 섹션이 **절대 같은 배치 계열을 쓰지 않는다.** 실측 높이는 1440×900 기준.
 
-| 동작                | 값                                                                   | 출처                        |
-| ------------------- | -------------------------------------------------------------------- | --------------------------- |
-| 진입: 사진 드리프트 | `objectPosition 50% 32% → 50% 40%`, 1.5s, ease `custom`              | `animateHero`               |
-| 진입: 워드마크      | 마스크 밖에서 `yPercent 100 → 0`, 0.8s                               | `animateHero`               |
-| 스크롤: 디밍        | `opacity 1 → 0.6`, `start "top+=30% top"`, `end "bottom top"`, scrub | `initScrollTriggersDesktop` |
-| 스크롤: 패럴랙스    | `smoother.effects(el, { speed: 0.85 })`                              | `addParallax`               |
-| 섹션 높이           | `h-[100svh] lg:h-[calc(100vh+1px)]`, 배경 검정                       | `.home-scroll__hero`        |
+| # | 섹션            | 배치 계열                      | 높이  | 움직임                         |
+| - | --------------- | ------------------------------ | ----- | ------------------------------ |
+| 1 | Hero            | 전면 사진, 글 왼쪽 아래        | 900   | 드리프트 + 줄 리빌 + 디밍 + 패럴랙스 |
+| 2 | Season rail     | 가로 레일 (제품 타일 4:5)      | 505   | 없음 (네이티브 스크롤)         |
+| 3 | Manifesto       | 가운데 정렬 선언문, 사진 없음  | 530   | 줄 리빌                        |
+| 4 | Category rail   | 가로 레일 (사진 안에 라벨 3:4) | 370   | 호버 스케일                    |
+| 5 | Editorial band  | 전면 사진, 글 왼쪽 아래        | 702   | 줄 리빌                        |
+| 6 | Finder          | 어긋난 2단 사진 + 오른쪽 문단  | 782   | 줄 리빌                        |
+| 7 | Promise         | 왼쪽 글 + 오른쪽 사진 두 장    | 726   | 줄 리빌                        |
+| 8 | Recirculation   | 왼쪽 문장 + 오른쪽 세로 영상 기둥 | -   | 영상 재생 + 패럴랙스 0.92      |
 
-`CustomEase.create("custom", "M0,0 C0.25,0.1 0.25,1 1,1")` - 레퍼런스가 등록하는 이름과 경로 그대로.
-(= `cubic-bezier(.25,.1,.25,1)`, CSS의 `ease`와 동일)
+8은 이 페이지에서 유일하게 **움직이는 미디어**를 쓴다. 소스가 812×1444 세로
+영상이라 가로 밴드에 전면으로 깔면 원본의 25% 만 남는다. 비율을 살린 기둥으로
+세우고 왼쪽에 문장을 붙였다(§6.4).
 
-**실측 검증 결과** (1440x900, scrollY별):
+### 6.1 히어로
 
-| scrollY | content transform | hero opacity | parallax Y |
-| ------- | ----------------- | ------------ | ---------- |
-| 300     | -300              | 0.981        | 45.0       |
-| 600     | -600              | 0.791        | 90.0       |
-| 850     | -850              | 0.632        | 127.5      |
+| 동작              | 값                                                        |
+| ----------------- | --------------------------------------------------------- |
+| 진입: 사진        | `objectPosition 50% 44% → 50% 50%`, `scale 1.06 → 1`, 1.4s |
+| 진입: 라벨/헤드라인/버튼 | 0 → 0.15s → 0.75s. 읽는 순서 그대로                 |
+| 스크롤: 디밍      | `opacity 1 → 0.6`, `start "top+=30% top"`, scrub          |
+| 스크롤: 패럴랙스  | `smoother.effects(el, { speed: 0.85 })`                   |
+| 섹션 높이         | `h-svh lg:h-dvh`                                          |
+| 사진              | `/home/main_2.webp` — **홈에서 유일한 실제 에셋**          |
 
-parallax Y가 스크롤의 정확히 15%(= speed 0.85)임을 확인.
+`CustomEase.create("custom", "M0,0 C0.25,0.1 0.25,1 1,1")` (= CSS `ease`).
 
-### 6.2 제품 섹션 `product-scroll-section.tsx`
+### 6.2 가로 레일 `media-rail.tsx`
 
-레퍼런스는 **600vh 구간을 핀 고정하고 8개 트윈을 순차 스크럽**한다. 그대로 옮겼다.
+**스크롤 하이재킹을 하지 않는다.** 레퍼런스도 네이티브 가로 스크롤이고,
+그래야 트랙패드·터치·키보드가 그대로 동작한다. Prev/Next 는 한 타일씩
+`scrollBy` 를 부르는 보조 수단이다.
 
-```ts
-gsap
-  .timeline({
-    scrollTrigger: {
-      trigger: section,
-      start: "top top",
-      end: "bottom bottom",
-      pin: wrapper,
-      scrub: true,
-      invalidateOnRefresh: true,
-    },
-  })
-  .to(details, { duration: 1 }) // 대기
-  .to(details, { duration: 1, width: "100%" }) // 패널 확장
-  .to(product, { duration: 1, scale: 1, ease: "power2.out" }, "<") // ★ 우리 추가분
-  .to(details, { duration: 0, borderLeftColor: "transparent" })
-  .to(bodySplit.lines, { duration: 1, yPercent: 0, stagger: 0.2 })
-  .to(statOneSplit.lines, { duration: 1, stagger: 0.4, yPercent: 0 })
-  .to(statTwoSplit.lines, { duration: 1, stagger: 0.4, yPercent: 0 })
-  .to(reference, { duration: 1, opacity: 1 })
-  .to(details, { duration: 1 }); // 대기
-```
+타일(`#ececec`)은 뷰포트를 정확히 n 등분하고 `gap-px` 로 벌린다. 그 1px 틈으로
+흰 바탕이 드러나 격자선처럼 읽힌다(레퍼런스가 테두리 없이 격자를 만드는 방법).
+폭 계산은 `lg:w-[calc((100%-4px)/5)]` 처럼 gap 수를 빼고 나눈다.
 
-줄 단위 마스크는 레퍼런스가 SplitText를 **두 번** 호출해 inner/outer 래퍼를 만든다.
-GSAP 3.13+의 `mask: "lines"` 옵션이 같은 일을 하므로 그걸 썼다.
+### 6.3 제품 타일 이미지
 
-```ts
-SplitText.create(el, { type: "lines", mask: "lines" });
-```
+`public/product/` 의 촬영본 5장을 쓴다. 타일 수는 물건 수와 같게 5칸이다.
 
-모바일(<1024px)은 레퍼런스와 동일하게 핀 없이 세로 스택 + 진입 리빌만 한다.
+**`object-contain` 을 쓴다.** 레퍼런스의 제품컷은 같은 비율로 누끼를 딴
+신발이라 cover 로 채워도 잘리는 게 없지만, 우리 촬영본은 비율이 0.442 ~ 0.748
+로 제각각이다. 4:5 틀에 cover 를 걸면 가장 긴 병이 위아래로 45% 잘린다.
+
+남은 숙제는 **에셋 쪽**이다. 배경 톤(#e1d9c5 ~ #fbf5f4)과 비율이 사진마다
+달라서 매트 위에 조금씩 다른 사각형으로 얹힌다. 한 벌로 보이려면 같은
+배경·같은 비율로 다시 앉힌 이미지가 필요하다.
+
+제품명은 **포장에서 읽어낸 것만** 적었다. `product_3` 만 "매화꽃차 /
+Plum Blossom" 이 또렷하고 나머지는 브랜드명까지만 판독된다. 지어내지 않고
+브랜드명 + 포장 설명으로 두었다(`home-content.ts` 에 확인 요청 메모).
+
+### 6.4 영상 `ambient-video.tsx`
+
+`AmbientVideo` 가 세 가지를 직접 처리한다.
+
+| 처리                        | 이유                                                          |
+| --------------------------- | ------------------------------------------------------------- |
+| `muted` 를 ref 로 재설정    | React 가 속성으로만 렌더하면 자동재생이 막히는 경우가 있다     |
+| 화면 밖이면 `pause()`       | 11MB 영상이 푸터 뒤에서 계속 디코딩되면 배터리만 깎는다        |
+| `#t=0.1` 미디어 프래그먼트  | 포스터 이미지가 없어서, 첫 프레임을 그리게 하는 대용           |
+
+`prefers-reduced-motion` 이면 재생하지 않고 첫 프레임만 둔다. 설정을 도중에
+바꿔도 따라가도록 `change` 를 듣는다.
+
+`ffmpeg` 이 없어 포스터를 못 뽑았다. 설치되면 1프레임을 webp 로 뽑아
+`poster` 를 주는 편이 낫다(첫 페인트가 빨라진다).
+
+### 6.5 자리표시 이미지
+
+아직 에셋이 없는 자리(카테고리 레일, 에디토리얼 밴드, Finder, Promise). 나머지는 `PlaceholderMedia` 로 둔다.
+**스톡 사진이나 picsum 링크로 채우지 않는다.** 채워 두면 "이미 끝난 화면"으로
+읽혀 교체가 미뤄지기 때문이다. 대신 무엇이 들어갈 자리인지와 필요한 원본
+규격을 면 위에 적어 둔다.
+
+교체할 때는 `PlaceholderMedia` 를 `next/image` 로 바꾸고 부모의 `aspect-*` 는
+그대로 두면 된다.
 
 ---
 
-## 7. 레퍼런스와 의도적으로 다른 부분
+## 7. 레퍼런스와 의도적으로 다른 부분 (v2)
 
-기록해두지 않으면 나중에 "왜 안 맞지?" 하게 되는 지점들.
+### 7.1 한글에는 모노를 쓰지 않는다 ★
 
-### 7.1 제품 이미지 맞춤 방식
+레퍼런스는 UI 라벨 **전부**를 Suisse Intl Mono 로 쓴다. 우리 라벨은 대부분 한글인데,
+대체 서체인 **Geist Mono 에는 한글 글리프가 없다.** 그러면 브라우저가 글자마다
+폴백 한글 폰트를 끌어오면서 **모노의 고정 폭 칸에 비례폭 글리프를 넣는다.**
+결과는 글자 사이가 들쭉날쭉한 줄이다(실제 렌더로 확인하고 고쳤다).
 
-레퍼런스 소스는 **1920x1080 가로 이미지에 세로로 긴 카톤이 여백을 두고** 들어 있다.
-그래서 `object-fit: cover`를 걸어도 제품이 작게 보인다.
-우리 차통 사진은 **1024x1024 정사각형에 제품이 꽉 찬 컷**이라 cover를 쓰면 화면을 뒤덮는다.
+그래서 축을 **언어**로 나눴다.
 
-→ `object-contain` + 흰 배경 + 높이 제한(`lg:max-h-[48vh]`)으로 변경.
+- 라틴·숫자(ABOUT, CART 0, NEW, Prev, 전화번호, 연도) → 모노. 레퍼런스의 질감이 남는다.
+- 한글(버튼 라벨, 섹션 라벨, 본문) → 산세.
 
-### 7.2 제품 확대 트윈 (레퍼런스에 없음)
+### 7.2 서체 대체
 
-레퍼런스를 실측한 결과 **확대 애니메이션은 존재하지 않는다**.
+Suisse Intl 두 벌 모두 상용이라 이미 실려 있는 **Geist / Geist Mono** 로 대체했다.
+한글은 두 서체 모두 글리프가 없어 `--font-display` 스택 뒤쪽의 한글 face 가 받는다.
 
-| 핀 진행 | 패널 폭 | cover 배율 | 렌더 크기 | img transform |
-| ------- | ------- | ---------- | --------- | ------------- |
-| 0       | 720     | 0.8333     | 1600x900  | none          |
-| 0.3     | 1440    | 0.8333     | 1600x900  | none          |
-| 0.9     | 1440    | 0.8333     | 1600x900  | none          |
+### 7.3 보조 회색을 어둡게 조정
 
-카톤은 분할 시점과 중앙 시점 모두 160x535px로 동일하고 가로 위치만 이동한다.
-"커지는 것처럼" 보이는 이유는 카톤이 뷰포트 높이의 **59%** 를 차지한 채 빈 흰 화면
-정중앙으로 들어오기 때문이다.
+레퍼런스의 보조 회색("SHOP ALL" 등)은 우리가 쓰는 값보다 밝아 타일 위에서
+AA 하한을 못 넘긴다. `#666664` 로 내려 surface 5.8:1 / tile 4.9:1 을 맞췄다.
+강조색 `#c1242f` 는 레퍼런스 값 그대로 쓴다(흰 바탕에서는 5.9:1 로 통과한다).
 
-사용자 요청으로 **`scale 0.78 → 1` 트윈을 추가**했다(`PRODUCT_SCALE_FROM`).
-패널 확장 트윈과 `"<"`로 동시 시작한다. 레퍼런스로 되돌리려면 이 트윈과 상수를 지우면 된다.
+### 7.4 행간을 레퍼런스보다 열어 두었다
 
-### 7.3 좌우 문구 박스
-
-레퍼런스는 `width: 34.7222vw`, `font-size: 5.5556vw`. 이건 "97% plant-based materials" 같은
-**긴 영문**을 담기 위한 치수다. 훨씬 짧은 한글에는 과해서, 정사각형 제품이 들어갈 통로가 없었다.
-
-→ `lg:w-[28vw]`, `lg:text-[4.6vw]`, 좌우 여백 `6.25vw → 5vw`로 조정.
-제목(h2)은 왼쪽 절반을 독점하므로 레퍼런스 `5.5556vw` 유지.
-
-### 7.4 헤더 로고
-
-레퍼런스 워드마크는 가로세로비 6.34라서 14px 높이로도 읽힌다.
-우리 로고는 2단 락업(비율 2.55)이라 같은 높이면 판독 불가.
-→ 데스크톱 24px로 키움. 히어로의 대형 마크도 `max-w-[560px]`로 제한
-(전체 폭으로 깔면 세로가 과해진다).
+레퍼런스 h1 은 `leading` 이 1.0 아래다. 라틴은 그래도 되지만 한글은 글자가
+em 상자를 꽉 채워서 어센더/디센더가 잘린다. 디스플레이 행간을 1.02~1.12 로 올렸다.
 
 ### 7.5 reduced motion
 
-레퍼런스는 `prefers-reduced-motion`을 전혀 처리하지 않는다. 우리는 처리한다.
-핀·마스크·패럴랙스를 모두 끄고, 600vh 활주로가 빈 채 남지 않도록
-`motion-reduce:lg:h-auto`로 섹션을 접는다.
+레퍼런스는 `prefers-reduced-motion`을 처리하지 않는다. 우리는 처리한다.
+드리프트·줄 리빌·패럴랙스·호버 스케일이 전부 꺼지고, 헤드라인은 마스크 없이
+그대로 보인다(§11 에서 검증).
+
+### 7.6 라우트 이름은 `/bag` 그대로
+
+메뉴 라벨은 레퍼런스를 따라 `CART` 지만 라우트는 `/bag` 이다. 슬러그를 바꾸면
+북마크·유입 링크가 끊기고 `route-chrome.ts` 와 이 문서까지 함께 움직여야 한다.
 
 ---
 
-## 8. 페이지 전환 `page-transition.tsx`
-
-레퍼런스는 Shopify Liquid라 클라이언트 라우터가 없어 **AJAX로 직접** 구현한다.
+## 8. 페이지 전환 `page-transition.tsx` (v1/v2 공통)
 
 ```
-클릭 → preventDefault → <html>.page-transitioning 추가 → pushState
-     → Promise.all([fetch(URL), hide()])     // 페치와 페이드아웃 병렬
-     → #view innerHTML 교체 + title/body class 갱신
-     → show() → 락 해제
+클릭 → preventDefault → <html>.page-transitioning 추가
+     → hide()  : gsap.fromTo(view, {opacity:1}, {duration:.3, ease:"power1.out", opacity:0})
+     → router.push
+     → show()  : smoother.scrollTo(0) 후
+                 gsap.fromTo(view, {opacity:0}, {duration:.3, ease:"power1.in", opacity:1})
+     → 락 해제
 ```
-
-`Fade` 전환의 실제 내용:
-
-```js
-hide: gsap.fromTo(view, {opacity:1}, {duration:.3, ease:"power1.out", opacity:0})
-show: smoother.scrollTo(0) 후
-      gsap.fromTo(view, {opacity:0}, {duration:.3, ease:"power1.in",  opacity:1})
-```
-
-우리는 fetch/innerHTML 교체 대신 `router.push`를 쓰되, **duration·ease·순서·락 클래스명은
-그대로** 가져왔다. 두 가지 트릭이 필요했다.
 
 ### 8.1 클릭은 capture 단계에서 가로챈다
 
@@ -353,137 +393,147 @@ show: smoother.scrollTo(0) 후
 `document`에 **capture: true**로 달고 `preventDefault()` + `stopPropagation()`으로 막은 뒤,
 페이드아웃 완료 콜백에서 `router.push`를 호출한다.
 
-### 8.2 뒤로가기는 popstate를 가로채 재생한다
+**부작용**: 링크의 `onClick` 은 아예 호출되지 않는다. 모바일 시트가 링크 탭에
+`onPointerDown` 으로 닫기를 거는 이유가 이것이다.
 
-Next 라우터는 `popstate`를 즉시 처리해서, 그냥 두면 콘텐츠가 페이드 없이 교체된다.
-**우리 리스너가 라우터보다 먼저 등록된다**는 점(자식 effect가 먼저 실행)을 이용한다.
+### 8.2 뒤로가기는 popstate를 가로채 재생한다
 
 ```ts
 event.stopImmediatePropagation(); // 라우터 핸들러 차단
 hide(() => {
   bypassPopstate.current = true;
   window.dispatchEvent(new PopStateEvent("popstate", { state: history.state }));
-}); // 페이드 후 라우터에 넘김
+});
 ```
 
-URL은 브라우저가 이미 바꿨지만 화면은 이전 페이지가 페이드아웃되는 동안 유지된다.
 Next가 리스너를 먼저 등록하도록 바뀌면 `stopImmediatePropagation`이 무력화되어
 "즉시 교체 + 페이드인"으로 degrade한다. 깨지지는 않는다.
 
 ### 8.3 제외 규칙
 
-레퍼런스 셀렉터와 동일: `target` 있음 / `data-page-transition-disabled` / `href^="#"` /
-외부 도메인 / 같은 경로 / 수식키 클릭은 가로채지 않는다.
+`target` 있음 / `data-page-transition-disabled` / `href^="#"` / 외부 도메인 /
+같은 경로 / 수식키 클릭은 가로채지 않는다.
 
 전환 중에는 `html.page-transitioning #view { pointer-events: none }`로 중복 클릭을 막는다.
-헤더는 `#view` 바깥이라 전환 중에도 고정된 채 남는다(레퍼런스와 동일).
+헤더는 `#view` 바깥이라 전환 중에도 고정된 채 남는다.
 
 ---
 
-## 9. className / 색 컨벤션 (필수)
+## 9. 컨벤션 (필수)
 
 ### 9.A className은 항상 `cn()`으로 쪼갠다
 
-문자열 하나에 몰아넣지 않는다. **줄 단위로 브레이크포인트를 분리**한다.
 순서는 기본 → **큰 폭에서 작은 폭 순**(2xl → xl → lg → md → sm) → 색 → 상태 변형.
 
 ```tsx
 className={cn(
-  "relative border-t px-4 py-10 text-center text-[20px] leading-[1.2]",  // 1. 기본
-  "lg:absolute lg:top-[16%] lg:left-1/2 lg:w-75 lg:border-0 lg:p-0",     // 2. lg
-  "md:h-130",                                                            // 3. md
-  BORDER.line,                                                           // 4. 색
-  TEXT.ink,
-  "motion-reduce:lg:h-auto",                                             // 5. 상태
-  className,                                                             // 6. 외부 주입
+  "relative flex h-full flex-col justify-end px-4 pb-8",  // 1. 기본
+  "lg:px-6 lg:pb-10",                                     // 2. lg
+  TEXT.white,                                             // 3. 색
+  "motion-reduce:transition-none",                        // 4. 상태
+  className,                                              // 5. 외부 주입
 )}
 ```
 
 Tailwind는 클래스 나열 순서가 CSS 우선순위에 영향을 주지 않으므로 이 정렬은
 **순수하게 가독성용이며 렌더 결과를 바꾸지 않는다**. 단 `cn()`의 tailwind-merge는
 같은 variant + 같은 속성끼리만 병합하므로, 한 줄 안의 순서는 임의로 바꾸지 말 것.
+(같은 속성을 두 번 적으면 **앞의 것이 조용히 사라진다.** `cn(BG.transparent, BG.tile)`
+같은 실수를 실제로 했다.)
 
 ### 9.B 색은 `src/constants/colors.ts`에서만 가져온다
 
-`bg-black`, `text-foreground`, `border-header-line` 같은 색 클래스를 컴포넌트에
-직접 쓰지 않는다. 전부 상수 맵 경유.
-
 ```ts
-COLOR; // 16진수 원본값. GSAP 트윈 등 JS에서 색이 필요할 때
-BG; // bg-[#ffffff] / bg-[#0a0a0a] / bg-[#000000]
-TEXT; // text-[#0a0a0a] / hover:text-[#0a0a0a]/55 / text-[#737373]
-BORDER; // border-[#000000] (헤더 괘선) / border-[#e5e5e5] (내부 얇은 선)
-OUTLINE; // outline-[#a1a1a1] (포커스 링)
+COLOR;   // 16진수 원본값. GSAP 트윈 등 JS에서 색이 필요할 때
+BG;      // bg-[#cccccc] / bg-[#bcbcbc] / bg-[#3c4c3d] ...
+TEXT;    // text-[#262626] / text-[#525250] / text-[#e8e9e3] ...
+BORDER;  // border-[#a8a8a6] / border-current
+OUTLINE; // outline-[#262626] (밝은 면) / outline-[#e8e9e3] (짙은 면·사진 위)
+SCRIM;   // 사진 위 글자용 가림막
 ```
 
 **왜 클래스 문자열을 통째로 상수에 넣는가**: Tailwind 스캐너는 소스에서 완성된
-클래스 문자열을 찾는다. `bg-[${COLOR.white}]` 처럼 템플릿 리터럴로 만들면
-클래스를 못 찾아 **CSS가 아예 생성되지 않는다.** 그래서 헥사값이 `COLOR`와
-클래스 맵 두 곳에 적혀 있다. 색을 바꿀 때는 둘 다 고칠 것.
+클래스 문자열을 찾는다. `bg-[${COLOR.surface}]` 처럼 템플릿 리터럴로 만들면
+클래스를 못 찾아 **CSS가 아예 생성되지 않는다.**
 
-**예외**: `transparent`, `currentColor` 는 헥사값이 없는 키워드라 팔레트 대상이
-아니다. `lg:bg-transparent` 처럼 그대로 쓴다.
+**예외**: `transparent`, `currentColor` 는 헥사값이 없는 키워드다.
+`border-current` / `text-current` 는 헤더처럼 면색이 스크롤에 따라 뒤집히는
+곳에서 안쪽 요소가 바깥 색을 따라가게 할 때 쓴다.
 
-### 9.C globals.css 토큰은 팔레트의 사본이다
+### 색 대비 (전부 계산해서 넣은 값이다)
 
-shadcn `ui/` 컴포넌트는 `--background`, `--border` 같은 CSS 변수를 쓴다.
-이 값들을 `COLOR`와 **같은 16진수**로 맞춰 두었다(원래 oklch였고, Tailwind
-neutral 스케일과 동일한 값이라 렌더 결과는 그대로다). 팔레트를 바꾸면
-`globals.css`의 `:root` 블록도 함께 고쳐야 두 체계가 어긋나지 않는다.
+| 조합                            | 비율   | 판정 |
+| ------------------------------- | ------ | ---- |
+| ink `#262626` / surface `#fff`  | 15.1:1 | AAA  |
+| ink / tile `#ececec`            | 12.8:1 | AAA  |
+| muted `#666664` / surface       | 5.8:1  | AA   |
+| muted / tile                    | 4.9:1  | AA   |
+| accent `#c1242f` / surface      | 5.9:1  | AA   |
+| accent / tile                   | 5.0:1  | AA   |
+| **accent / forest**             | 1.2:1  | **못 씀** |
+| chalk `#e8e9e3` / forest        | 7.5:1  | AAA  |
+| moss `#b8bcb4` / forest         | 4.8:1  | AA   |
 
-`.dark` 블록도 16진수로 바꿔뒀지만 현재 라이트 모드 고정이라 활성화되지 않는다.
+`muted` 는 **타일이 하한을 정한다.** 더 밝게 가면 타일 위에서 AA 가 깨진다.
+레퍼런스의 보조 회색은 이보다 밝지만 그대로 쓰면 미달이라 어둡게 잡았다.
 
-**주의**: shadcn init이 `--font-sans: var(--font-sans)` 라는 자기참조를 넣어둬서
-Geist가 적용되지 않고 있었다. `--font-sans: var(--font-geist-sans)`로 고쳐둠. 되돌리지 말 것.
+**강조색은 밝은 면에서만 쓴다.** 짙은 초록 위에서는 1.2:1 까지 무너진다.
 
-`--header-line`은 `@theme inline`으로 `border-header-line` 유틸리티를 만들지만,
-컴포넌트에서는 `BORDER.line`을 쓴다. 변수는 `ui/` 쪽 호환용으로 남겨둔 것.
+**투명도로 위계를 만들지 않는다.** 위계는 크기로 만든다.
 
-### 헤더 치수 (레퍼런스 실측)
+### 9.C 타입 스케일은 `src/constants/typography.ts`에서만 가져온다
 
-| 항목        | 값                                                       |
-| ----------- | -------------------------------------------------------- |
-| 높이        | 모바일 48px(+8px 인셋 플로팅) / 데스크톱 60px※           |
-| 브랜드 칼럼 | 정확히 4/12 = 33.33%                                     |
-| 메뉴 간격   | 첫 항목 `ml-7.5`, 이후 `ml-9`, 각 항목 `px-2.5`          |
-| 우측 셀     | `w-14` / `lg:w-35` (56px / 140px)                        |
-| 라벨        | `HEADER_LABEL` = 13px, uppercase, tracking 없음          |
-| 활성 메뉴   | `font-bold` (레퍼런스 `.banner__nav-item.active`와 동일) |
+| 상수                | 서체   | 쓰는 곳                          |
+| ------------------- | ------ | -------------------------------- |
+| `LABEL`             | 모노   | 라틴·숫자 UI (ABOUT, NEW, Prev)  |
+| `LABEL_KO`          | 산세   | 한글 UI 라벨, 버튼, 섹션 라벨    |
+| `MONO_DATA`         | 모노   | 전화번호, 사업자번호, 가격, 연도 |
+| `BODY`              | 산세   | 한글 본문                        |
+| `DISPLAY_HERO`      | 산세   | 히어로 h1 (6.1vw = 88px @1440)   |
+| `DISPLAY_SECTION`   | 산세   | 섹션 h2                          |
+| `DISPLAY_MANIFESTO` | 산세   | 선언문                           |
+| `TITLE_ITEM`        | 산세   | 제품명, 카테고리명               |
 
-※ 레퍼런스 원본은 40px이나 사용자가 60px로 조정. `main`의 `lg:pt-15`,
-`page.tsx`의 `lg:-mt-15`와 **세 값이 함께 움직여야 한다**.
+**폭을 `ch` 로 잡지 않는다.** `ch` 는 "0" 글리프 폭이라 한글 한 글자가 약 2ch 를
+먹는다. `max-w-[20ch]` 로 둔 선언문이 한글 10자에서 꺾여 네 줄로 부서졌다.
+한글 문단은 px 로 고정한다.
 
-활성 메뉴 볼드 처리 시 글자 폭이 넓어져 nav가 흔들리는 문제가 있어,
-링크를 1칸 grid로 만들고 `invisible font-bold` 고스트를 겹쳐 폭을 고정했다.
+**헤드라인은 줄 단위 배열로 적는다**(`home-content.ts`). `\n` + `whitespace-pre-line`
+으로 두면 SplitText 가 줄을 다시 나누면서 개행이 사라져 2줄 헤드라인이 1줄로 붙는다.
+`HeadlineLines` 가 줄마다 블록 요소로 내보내면 SplitText 가 그 경계를 그대로 잡는다.
 
-### 9.D 푸터는 헤더의 격자를 되쓴다
+### 9.D 헤더와 푸터
 
-`site-footer.tsx`는 새 레이아웃을 만들지 않고 **헤더의 치수를 그대로 뒤집는다.**
-그래서 위아래 바가 한 격자에서 나온 것으로 읽힌다. 실측으로 검증한 값:
+**헤더** — 좌 메뉴 / 중앙 로고 / 우 유틸리티. 로고를 광학적 중앙에 두려고
+`grid-cols-[1fr_auto_1fr]` 을 쓴다. 좌우 내용 폭이 달라도 로고가 흔들리지 않는다.
 
-| 항목             | 헤더                    | 푸터                      |
-| ---------------- | ----------------------- | ------------------------- |
-| 브랜드 칼럼 경계 | `nav` 좌변 x=479.98     | 사업자정보 칼럼 좌변 동일 |
-| 우측 셀          | LOG IN / BAG, 각 140px  | 이용약관 / 개인정보처리방침, 각 140px (x=1160, 1300) |
-| 바 높이          | 48px (`lg:h-12`)        | 하단 바 48px + 상단 괘선 1px |
-| 라벨             | `HEADER_LABEL` (13px)   | 동일 상수 재사용          |
+면색 상태는 `HeaderShell` 하나가 정한다.
 
-헤더 폭을 바꾸면 푸터도 같이 움직여야 한다. 두 파일 모두 `lg:w-1/3`, `lg:w-35`,
-`HEADER_LABEL`을 쓰므로 상수만 맞추면 된다.
+| 상태          | 조건                        | 면        | 글자     | 로고     |
+| ------------- | --------------------------- | --------- | -------- | -------- |
+| 오버레이      | `/` 이면서 스크롤 < 88vh    | 투명      | 흰색     | `invert` |
+| 솔리드        | 그 외 전부                  | `#ffffff` | `#262626`| 원본     |
+
+상태 전환은 ScrollTrigger `onToggle` 이다. `onUpdate` 로 하면 **프레임마다
+setState 가 돌아 리렌더가 폭주한다.** `onToggle` 은 경계를 넘을 때만 불린다.
+
+활성 메뉴는 **밑줄**로 표시한다. 굵기를 바꾸면 글자 폭이 늘어 옆 항목이 밀린다
+(v1 은 그래서 보이지 않는 볼드 고스트를 겹쳐 폭을 고정해야 했다. 그 장치가 사라졌다).
+
+**푸터** — 이 페이지에서 **명도가 뒤집히는 유일한 자리**다. 흰 바탕이 계속되다
+푸터에서만 짙은 초록이 깔려 스크롤이 끝났다는 신호가 된다. 섹션마다 뒤집으면
+다른 사이트로 넘어온 것처럼 읽히므로 여기 하나만 유지할 것.
+
+사업자 정보와 법적 고지, 링크 칼럼은 `src/constants/business.ts` 한 곳에서 온다.
 
 **푸터를 `#view` 안, `<main>` 밖에 두는 이유**
 
 - `#view` **안**: 밖에 두면 라우트가 바뀌는 순간 문서 높이가 먼저 바뀌어 푸터가 튄다.
-  안에 두면 본문과 함께 0.3초 페이드된다.
-- `<main>` **밖**: `main` 안의 `footer`는 페이지 푸터가 아니라 섹션 푸터로 취급돼
-  `contentinfo` 랜드마크가 사라진다. 그래서 §4에서 `main`을 `#view` 안으로 옮겼다.
-
-사업자 정보와 법적 고지 링크는 `src/constants/business.ts` 한 곳에서 온다.
-푸터와 약관/처리방침 페이지가 같은 값을 읽으므로 여기만 고치면 된다.
+- `<main>` **밖**: `main` 안의 `footer`는 섹션 푸터로 취급돼 `contentinfo` 랜드마크가 사라진다.
 
 ### 9.E 라우트 그룹: (common) / (non-common)
 
-페이지를 chrome 기준으로 두 계열로 나눈다. 괄호 그룹이라 **URL에는 영향이 없다.**
+괄호 그룹이라 **URL에는 영향이 없다.**
 
 | 계열           | 헤더            | 푸터   | 라우트                                        |
 | -------------- | --------------- | ------ | --------------------------------------------- |
@@ -492,42 +542,16 @@ Geist가 적용되지 않고 있었다. `--font-sans: var(--font-geist-sans)`로
 
 **무엇이 어디에 사는지가 제약으로 정해져 있다.**
 
-- **헤더는 root layout에만 둘 수 있다.** `position: fixed`가 `#smooth-content`
-  안에서는 뷰포트 기준이 아니게 되는데(§4), 계열 layout은 항상 `#view` 안,
-  즉 스무더 안쪽에서 렌더된다. 그래서 계열 layout에 헤더를 넣으면 스크롤과
-  함께 밀려 올라간다.
+- **헤더는 root layout에만 둘 수 있다** (§4의 transform 문제).
 - **`<main>`과 푸터는 계열 layout이 갖는다.** 둘 다 `#view` 안에 있어야 하고
-  (§9.D), 계열마다 달라지는 것이 정확히 이 둘이다. 상단 패딩도 계열별로
-  헤더 높이를 따라갈 수 있게 여기 둔다.
+  계열마다 달라지는 것이 정확히 이 둘이다.
 - **`SmoothScroll`과 `PageTransition`은 root에 못 박아 둔다.** 계열 layout으로
   내리면 계열을 넘나들 때 언마운트되어 ScrollSmoother가 kill/재생성되고,
   다시 마운트된 `PageTransition`은 `isFirstRender` 가드에 걸려 **페이드인을
   통째로 건너뛴다.**
 
-**헤더 선택은 `constants/route-chrome.ts`의 접두사 목록이 한다.** root layout은
-서버 컴포넌트라 pathname을 모르므로, `ChromeHeader`(유일한 클라이언트 조각)가
-`usePathname()`으로 고른다. 두 헤더는 prop으로 받은 RSC 트리라 서버 컴포넌트로
-남는다. `(non-common)/` 아래 라우트를 추가하면 **접두사 목록에도 넣어야 한다.**
-
-parallel routes(`@header` 슬롯)를 쓰면 이 동기화가 사라지지만, 슬롯은 소프트
-내비게이션에서 매칭에 실패하면 **직전 슬롯을 그대로 붙들고 있는다**(`default.tsx`는
-하드 내비게이션 폴백일 뿐이다. Next 공식 문서 Parallel Routes > Behavior).
-계열마다 catch-all 페이지를 깔아야 해서 헤더가 둘뿐인 지금은 비용이 더 크다.
-계열이 늘면 그때 옮기는 것이 맞다.
-
-**실측 검증** (`/bag` ↔ `/payment` 소프트 내비게이션, 60ms 간격 샘플링):
-
-```
-== (common) -> (non-common) ==
-  /bag      | 0.42 | LOCK | SiteHeader    | footer    | smoother-kept
-  /bag      | 0.09 | LOCK | SiteHeader    | footer    | smoother-kept
-  /payment  | 0.00 | LOCK | PaymentHeader | no-footer | smoother-kept   ← 교체는 opacity 0에서
-  /payment  | 0.73 | LOCK | PaymentHeader | no-footer | smoother-kept
-  /payment  | 1.00 | -    | PaymentHeader | no-footer | smoother-kept
-```
-
-헤더 교체가 `opacity 0` 지점에서 일어나므로 사용자는 헤더가 바뀌는 순간을 보지
-않는다. 스무더는 양방향 모두 유지된다.
+**헤더 선택은 `constants/route-chrome.ts`의 접두사 목록이 한다.**
+`(non-common)/` 아래 라우트를 추가하면 **접두사 목록에도 넣어야 한다.**
 
 ---
 
@@ -535,19 +559,11 @@ parallel routes(`@header` 슬롯)를 쓰면 이 동기화가 사라지지만, �
 
 ### 10.0 Tailwind 임의값 경고는 꺼 두었다
 
-`max-w-[425px]`, `h-[378px]` 같은 px 임의값은 **레퍼런스에서 실측한 값**이라 의도적으로 유지한다.
-`max-w-106.25`로 바꾸면 숫자의 출처 추적이 끊긴다(§1의 rem 주의사항 참고).
+`.vscode/settings.json` 의 `tailwindCSS.lint.suggestCanonicalClasses: "ignore"`.
+레퍼런스 실측값을 px 로 유지하기 위해서다.
 
-Tailwind IntelliSense가 이걸 계속 제안하므로 `.vscode/settings.json`에서 규칙을 껐다.
-
-```json
-{ "tailwindCSS.lint.suggestCanonicalClasses": "ignore" }
-```
-
-**부작용**: 이 규칙은 세분화 옵션이 없어서, `h-[100svh] → h-svh` 처럼
-**진짜 개선인 제안까지 함께 사라진다**. 끄기 전에 그런 케이스는 이미 정리했다
-(`h-svh`, `translate-y-[-40%]`). 앞으로 임의값을 새로 쓸 때는
-전용 유틸리티가 있는지(`svh`/`dvh`/`lvh`, `prose` 등) 직접 확인할 것.
+**부작용**: `h-[100dvh] → h-dvh` 같은 **진짜 개선 제안까지 사라진다.**
+임의값을 새로 쓸 때는 전용 유틸리티가 있는지 직접 확인할 것.
 
 ### 10.1 next/image 캐시는 파일 내용을 안 본다
 
@@ -557,38 +573,70 @@ Tailwind IntelliSense가 이걸 계속 제안하므로 `.vscode/settings.json`�
 rm -rf .next/cache/images   # 후 브라우저 하드 리로드(⌘⇧R)
 ```
 
-운영까지 확실히 하려면 파일명에 버전을 붙여 URL을 바꾼다.
-
 ### 10.2 헤드리스 브라우저에서 GSAP 값이 전부 0으로 읽힌다
 
 스크린샷을 강제하지 않으면 rAF가 돌지 않아 ScrollSmoother/ScrollTrigger가 멈춘 것처럼 보인다.
 **코드 버그로 오인하기 쉽다.** 측정 루프에 `Page.captureScreenshot`을 끼워 프레임을 강제할 것.
 
-### 10.3 마스크 안의 요소는 IntersectionObserver에 절대 안 걸린다
+### 10.3 SplitText 는 폰트 로드 뒤에 나눠야 한다
 
-`translateY(100%)`로 내려간 요소는 자기 마스크의 클립 영역 밖이라
-교차 비율이 영구히 0이다. `whileInView`/IO 기반 리빌을 쓸 거면
-**트리거를 마스크 자체에 걸고** 자식은 variant 전파로 움직여야 한다.
-(현재는 GSAP 스크럽이라 해당 없음. IO 리빌을 추가할 때 재발 주의.)
+폰트가 바뀌면 줄바꿈 위치가 바뀐다. `document.fonts.ready` 앞에서 나누면
+폴백 폰트 기준으로 잘린 줄이 그대로 굳는다.
 
-### 10.4 shadcn `form`은 현재 스타일에 존재하지 않는다
+### 10.4 마스크 안의 요소는 IntersectionObserver에 절대 안 걸린다
 
-`radix-nova` 레지스트리의 `form.json`은 **빈 스텁**이다(`field` 컴포넌트로 대체되는 중).
-`npx shadcn add form`이 조용히 아무것도 설치하지 않는다.
-동일 구성(Radix + Tailwind v4)인 `new-york-v4`에서 직접 받았다.
+`translateY(100%)`로 내려간 요소는 자기 마스크의 클립 영역 밖이라 교차 비율이 영구히 0이다.
+IO 기반 리빌을 쓸 거면 **트리거를 마스크 자체에 걸어야** 한다.
+(현재는 GSAP ScrollTrigger 라 해당 없음.)
 
-```bash
-npx shadcn@latest add https://ui.shadcn.com/r/styles/new-york-v4/form.json
-```
+### 10.5 모달이 떠 있는 스크린샷에서 색을 재면 전부 0.8배로 나온다 ★
 
-`label`은 `radix-nova`에서 먼저 설치해 덮어쓰기를 피했다.
+레퍼런스는 진입 직후 뉴스레터 모달과 지역 선택 모달을 띄우고, **페이지 전체에
+20% 검정 막**을 깐다. 그 상태로 찍은 스크린샷의 픽셀을 재면 모든 면색이
+0.8 배로 읽힌다. 처음에 이걸 놓쳐서 팔레트를 통째로 회색으로 깔았다.
 
-### 10.5 shadcn 생성물 린트 예외
+| 재어 나온 값 | ÷ 0.8 | 진짜 값   |
+| ------------ | ----- | --------- |
+| `#cccccc`    | 255   | `#ffffff` |
+| `#bcbcbc`    | 235   | `#ececec` |
+| `#303c30`    | 60,75,60 | `#3c4c3d` |
 
-`src/components/ui/**`는 `npx shadcn add`로 재생성되는 벤더 코드라 손대지 않는다.
-carousel.tsx가 `react-hooks/set-state-in-effect`에 걸려서
-`eslint.config.mjs`에 **해당 디렉토리 + 해당 룰만** 끄는 override를 두었다.
-인라인 주석은 재생성 시 사라지므로 config로 처리한 것.
+**어긋남을 알아채는 방법**: 같은 값을 computed style 로도 읽어 비교한다.
+푸터가 픽셀에서는 `#303c30`, computed 에서는 `#3c4c3d` 로 갈렸는데,
+이 비율(0.8)이 다른 면에도 똑같이 적용된다는 게 단서였다.
+firecrawl `branding` 도 `background: #FFFFFF` 를 정확히 돌려주고 있었다.
+
+**규칙: 색은 픽셀에서 재지 않는다. computed style 에서 읽는다.**
+픽셀 스캔은 "섹션마다 면색이 바뀌는가"를 볼 때만 쓴다(값이 아니라 경계를 본다).
+
+### 10.6 짧은 페이지에서는 "스크롤이 안 됐다"로 오인된다 ★
+
+라우트를 옮겼는데 첫 화면에 푸터가 보이면 사용자는 **스크롤이 맨 위로 가지
+않았다고 읽는다.** 실제로 그렇게 보고됐다.
+
+측정해 보니 스크롤은 정상이었다(전환 직후 `scrollY = 0`). 원인은 다른 데
+있었다: 자리표시 페이지가 `min-h-[70svh]` 라서 900px 뷰포트에서 630px 밖에
+안 됐고, 남은 270px 을 짙은 초록 푸터가 채웠다. **맨 위에 있는 화면과
+푸터까지 스크롤된 화면이 사용자 눈에는 똑같아 보인다.**
+
+→ 본문 최소 높이를 `calc(100svh - 3.25rem)`(뷰포트 − 헤더)로 잡아
+푸터가 항상 접힘선 **아래**에서 시작하게 했다.
+
+**교훈**: "스크롤이 안 된다"는 제보를 받으면 스크롤을 고치기 전에
+`scrollY` 를 먼저 재 볼 것. 값이 0이면 문제는 페이지 높이 쪽이다.
+푸터가 짙은 색이면 이 착시가 특히 강하다.
+
+새 페이지를 만들 때는 본문이 최소 한 화면을 채우는지 확인한다
+(`foldcheck.mjs` 가 라우트별로 `footerTop >= innerHeight` 를 검사한다).
+
+### 10.7 shadcn 생성물은 손대지 않는다
+
+`src/components/ui/**`는 `npx shadcn add`로 재생성되는 벤더 코드다.
+carousel.tsx가 `react-hooks/set-state-in-effect`에 걸려서 `eslint.config.mjs`에
+**해당 디렉토리 + 해당 룰만** 끄는 override를 두었다(인라인 주석은 재생성 시 사라진다).
+
+`--radius: 0rem` 로 두었으므로 shadcn 컴포넌트도 각지게 나온다. 팔레트를 바꾸면
+`globals.css` 의 `:root` 토큰과 `colors.ts` 를 **함께** 고칠 것.
 
 ---
 
@@ -607,58 +655,74 @@ carousel.tsx가 `react-hooks/set-state-in-effect`에 걸려서
 #    → captureScreenshot 루프(프레임 강제) → Runtime.evaluate로 계산값 읽기
 ```
 
-세션 스크래치패드에 만들어 둔 스크립트들(재작성해도 무방):
-
-| 스크립트         | 용도                                           |
-| ---------------- | ---------------------------------------------- |
-| `shoot.mjs`      | 스크롤 위치별 스크린샷                         |
-| `measure.mjs`    | 프레임 강제 + 스크린샷 + 계산 스타일 동시 수집 |
-| `probe.mjs`      | 임의 JS 평가 (`awaitPromise: true` 필요)       |
-| `refpin.mjs`     | 레퍼런스 사이트의 핀 구간 실측                 |
-| `transition.mjs` | 전환 중 `#view` opacity 시계열 샘플링          |
-
-전환 검증 예시 출력:
+### v2 검증 결과 (1440×900)
 
 ```
-== 메뉴 클릭 -> /shop ==
-  /      | 0.62 | LOCK      ← 이전 페이지 페이드아웃
-  /      | 0.01 | LOCK
-  /shop  | 0.20 | LOCK      ← 콘텐츠 교체
-  /shop  | 1.00 | -         ← 락 해제
+== 실측 대조 ==
+  h1 font-size   87.84px   (레퍼런스 88px)
+  헤더 높이       52px      (레퍼런스 52px)
+  h1 줄 수        2         (의도대로)
+
+== 헤더 상태 전환 ==
+  y=0     solid=false  bg=rgba(0,0,0,0)      color=rgb(255,255,255)
+  y=400   solid=false  bg=rgba(0,0,0,0)      color=rgb(255,255,255)
+  y=800   solid=true   bg=rgb(255,255,255)   color=rgb(38,38,38)
+  y=300   solid=false  bg=rgba(0,0,0,0)      color=rgb(255,255,255)   ← 되돌아온다
+
+== 페이지 전환 (메뉴 클릭 -> /shop) ==
+  /      | 1.00 | LOCK
+  /      | 0.00 | LOCK        ← 페이드아웃 완료
+  /shop  | 0.01 | LOCK        ← opacity 0 지점에서 교체
+  /shop  | 0.47 | LOCK
+  /shop  | 1.00 | -           ← 락 해제
+
+== prefers-reduced-motion: reduce ==
+  숨거나 변형이 남은 헤드라인 없음
+
+== 모바일 390×844 ==
+  document.scrollWidth 390 == innerWidth 390   ← 가로 넘침 없음
+
+== 접힘선 검사 (자리표시 라우트 전부 × 1440/1280/390) ==
+  OK  /about    footerTop=900  vh=900          ← 푸터가 첫 화면에 안 들어온다
+  OK  /shop     footerTop=900  vh=900
+  OK  /bag      footerTop=900  vh=900
+  OK  /payment  footerTop=(none)               ← (non-common) 은 푸터 없음
 ```
 
 ---
 
 ## 12. 현재 상태와 다음 작업
 
-### 완료
+### 완료 (design-v2)
 
-- 공통 헤더 (데스크톱/모바일, 활성 상태, 시트 메뉴)
-- 홈 히어로 섹션 (진입 애니메이션 + 스크롤 디밍 + 패럴랙스)
-- 홈 제품 설명 섹션 (600vh 핀 스크럽, 8비트 타임라인)
-- ScrollSmoother 관성 스크롤
-- 페이지 전환 (링크 클릭 + 뒤로가기)
-- 공통 푸터 (사업자 정보 + 약관/처리방침 진입, §9.D)
-- 라우트 그룹 분리 `(common)` / `(non-common)` + 경로별 헤더 전환 (§9.E)
+- 팔레트/타입 토큰 교체 (`colors.ts`, `typography.ts`, `globals.css`)
+- 헤더 재구성: 좌 메뉴 / 중앙 로고 / 우 유틸리티 + 스크롤 상태 전환
+- 홈 8개 섹션 (§6)
+- 초록 푸터 (링크 칼럼 + 사업자 정보 + 법적 고지)
+- 자리표시 페이지 전면 재작성
+- 페이지 전환 / ScrollSmoother / 계열 분리 **유지 확인** (§11)
 
 ### 미완 / 임시
 
-| 항목                                      | 상태                                                                                           |
-| ----------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `/about` `/shop` `/admin` `/login` `/bag` | **자리표시 스텁**. 제목 한 줄뿐                                                                |
-| `/terms` `/privacy`                       | **본문 없음**. 법적 효력이 있는 문서라 지어내지 않았다. 확정본을 받아 넣어야 한다               |
-| `/payment`                                | **자리표시 스텁**. `(non-common)` 계열 배선만 확인해 둔 상태                                    |
-| `PaymentHeader`                           | 로고만 있는 최소 형태. 로고는 홈 링크로 남겨 뒀다. 이탈을 막으려면 Link를 span으로 바꾼다      |
-| 통신판매업신고번호                        | 값을 못 받아 푸터에서 빠져 있다. 국내 커머스는 표기 의무가 있으므로 확인 필요                  |
-| 제품 섹션 카피                            | **전부 예시 문구**. "해발 500m", "곡우 전" 등 수치는 지어낸 값이다. 각주에 그 사실을 명시해 둠 |
-| `BAG (0)` 개수                            | `bagCount` prop 하드코딩. 장바구니 상태 연동 필요                                              |
-| 다크모드                                  | 토큰은 정의돼 있으나 실제 검증 안 함. `next-themes` 설치만 된 상태 (ThemeProvider 미설치)      |
+| 항목                                      | 상태                                                                    |
+| ----------------------------------------- | ----------------------------------------------------------------------- |
+| **홈 이미지 에셋**                        | 히어로·제품 타일·영상은 실제 에셋. 카테고리/에디토리얼/Finder/Promise 는 **자리표시** |
+| 제품명 3개                                | product_2 / product_4 / product_5 의 차 이름 미확인. 포장에서 안 읽혀 브랜드명으로 뒀다 |
+| 제품 촬영본 규격                          | 배경 톤·비율이 제각각이라 그리드가 한 벌로 안 읽힌다(§6.3)              |
+| 영상 포스터                               | `ffmpeg` 부재로 못 뽑음. 첫 프레임은 `#t=0.1` 로 대신하고 있다          |
+| `/about` `/shop` `/admin` `/login` `/bag` | **자리표시 스텁**                                                       |
+| `/terms` `/privacy`                       | **본문 없음**. 법적 효력이 있는 문서라 지어내지 않았다                  |
+| `/payment`                                | **자리표시 스텁**. `(non-common)` 계열 배선만 확인해 둔 상태            |
+| 제품 가격                                 | 전부 `"준비 중"`. 숫자를 지어내지 않았다 (`home-content.ts`)            |
+| 통신판매업신고번호                        | 값을 못 받아 푸터에서 빠져 있다. 국내 커머스는 표기 의무가 있다         |
+| `CART (0)` 개수                           | `cartCount` prop 하드코딩. 장바구니 상태 연동 필요                      |
+| 소셜 링크                                 | 계정을 못 받아 푸터 칼럼에서 빠져 있다                                  |
+| 다크모드                                  | `.dark` 토큰은 새 팔레트로 맞춰 뒀으나 토글 미설치. 레퍼런스에는 있다   |
 
 ### 이어서 할 때 참고
 
-- 레퍼런스의 나머지 섹션(3, 5)은 **스크롤로 스크럽되는 mp4**다.
-  `section-3-desktop-...mp4`(6초, 154프레임, pauseFrame 72),
-  `section-5-desktop-...mp4`(14초, 490프레임). `currentTime`을 scrub으로 트윈한다.
-  같은 방식을 쓰려면 영상 에셋이 먼저 필요하다.
 - 새 섹션을 추가할 때는 §4 합성 순서와 §5 sticky 금지 규칙을 먼저 확인할 것.
+- 섹션을 추가하면 §6 표의 "배치 계열" 열을 보고 **앞뒤와 겹치지 않는 계열**을 고를 것.
+- 이미지를 넣을 때는 `PlaceholderMedia` 를 `next/image` 로 바꾸고 부모의
+  `aspect-*` 는 그대로 둔다.
 - 패키지 매니저는 **npm**으로 통일한다(`package-lock.json` 존재). yarn 혼용 금지.

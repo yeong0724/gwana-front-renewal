@@ -3,15 +3,25 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { OUTLINE, TEXT } from "@/constants/colors";
+import { type NavItem } from "@/constants/nav-items";
+import { LABEL } from "@/constants/typography";
 import { cn } from "@/lib/utils";
-import { HEADER_LABEL, type NavItem } from "../../constants/nav-items";
 
 export function useIsActive(href: string) {
   const pathname = usePathname();
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+/**
+ * 헤더 메뉴 한 칸.
+ *
+ * 활성 표시는 밑줄이다. 예전 구현은 굵기를 바꿨는데, 굵어지면 글자 폭이 늘어
+ * 옆 항목이 밀린다(그래서 보이지 않는 볼드 고스트를 겹쳐 폭을 고정해야 했다).
+ * 밑줄은 폭을 건드리지 않으므로 그 장치가 통째로 필요 없다.
+ *
+ * 색은 헤더 껍데기가 정한다. 여기서는 `text-current` 만 쓰고, 호버는 색 대신
+ * 투명도로 눌러 사진 위/바탕 위 양쪽에서 같게 읽히게 한다.
+ */
 export function HeaderNavLink({
   href,
   label,
@@ -24,29 +34,14 @@ export function HeaderNavLink({
       href={href}
       aria-current={isActive ? "page" : undefined}
       className={cn(
-        HEADER_LABEL,
-        // Reference nav items are full-height hit areas with 10px side padding.
-        "grid h-full items-center px-2.5",
-        TEXT.ink,
-        TEXT.inkHover,
-        "transition-colors duration-150",
-        "focus-visible:outline-2 focus-visible:-outline-offset-2",
-        OUTLINE.ring,
+        LABEL,
+        "py-2 text-current transition-opacity duration-150 hover:opacity-60",
+        "focus-visible:outline-2 focus-visible:outline-offset-2",
+        isActive && "underline decoration-1 underline-offset-[5px]",
         className,
       )}
     >
-      {/* Bold ghost reserves the widest state so switching pages never shifts the nav. */}
-      <span aria-hidden className="invisible col-start-1 row-start-1 font-bold">
-        {label}
-      </span>
-      <span
-        className={cn(
-          "col-start-1 row-start-1",
-          isActive ? "font-bold" : "font-normal",
-        )}
-      >
-        {label}
-      </span>
+      {label}
     </Link>
   );
 }

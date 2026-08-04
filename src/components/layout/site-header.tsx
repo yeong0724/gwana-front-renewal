@@ -1,112 +1,108 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { BG, BORDER, OUTLINE, TEXT } from "@/constants/colors";
+import { OUTLINE } from "@/constants/colors";
+import { CART_ITEM, LOGIN_ITEM, NAV_ITEMS } from "@/constants/nav-items";
+import { LABEL } from "@/constants/typography";
 import { cn } from "@/lib/utils";
 import { HeaderMobileMenu } from "./header-mobile-menu";
 import { HeaderNavLink } from "./header-nav-link";
-import { HEADER_LABEL, LOGIN_ITEM, NAV_ITEMS } from "../../constants/nav-items";
+import { HeaderShell } from "./header-shell";
 
 /**
- * Right-hand cells. The reference bar gives each one a fixed 140px box on
- * desktop and 56px on mobile, divided by a rule that runs the full height.
+ * 오른쪽 유틸리티 셀. 왼쪽 메뉴와 같은 라벨 벌을 쓰되 활성 표시는 하지 않는다
+ * (레퍼런스도 LOGIN/CART 에는 현재 위치 표시를 붙이지 않는다).
  */
-const RIGHT_CELL = cn(
-  HEADER_LABEL,
-  "flex w-14 shrink-0 items-center justify-center border-l uppercase",
-  "lg:w-35",
-  BORDER.line,
-  TEXT.ink,
-  TEXT.inkHover,
-  "transition-colors duration-150",
-  "focus-visible:outline-2 focus-visible:-outline-offset-2",
-  OUTLINE.ring,
+const UTILITY_CELL = cn(
+  LABEL,
+  "px-2 py-2 text-current transition-opacity duration-150 hover:opacity-60",
+  "focus-visible:outline-2 focus-visible:outline-offset-2",
 );
 
-export function SiteHeader({ bagCount = 0 }: { bagCount?: number }) {
+/**
+ * 공통 헤더.
+ *
+ * 레퍼런스 구조를 그대로 옮겼다: **왼쪽 메뉴 / 가운데 로고 / 오른쪽 유틸리티**.
+ * 로고를 광학적 중앙에 두려면 좌우 칼럼이 같은 폭이어야 하므로
+ * `grid-cols-[1fr_auto_1fr]` 로 잡고 오른쪽 칼럼을 `justify-end` 한다.
+ * 좌우 내용의 폭이 달라도 로고는 흔들리지 않는다.
+ *
+ * 색은 전부 `HeaderShell` 이 정한다. 여기서는 `text-current` 만 쓴다.
+ */
+export function SiteHeader({ cartCount = 0 }: { cartCount?: number }) {
   return (
-    <header
-      className={cn(
-        // Mobile: floating bar inset 8px, ruled on all four sides.
-        "fixed inset-x-2 top-2 z-50 h-9 border",
-        // Desktop: edge to edge at 60px, only the bottom rule.
-        "lg:inset-x-0 lg:top-0 lg:h-12 lg:border-0 lg:border-b",
-        BG.page,
-        BORDER.line,
-      )}
-    >
-      <div className="flex h-full items-stretch">
-        <HeaderMobileMenu className="lg:hidden" />
-
-        {/* Brand column is exactly 4 of 12 on desktop, as in the reference grid. */}
-        <div
-          className={cn(
-            "flex flex-1 items-center px-4",
-            "lg:w-1/3 lg:flex-none lg:px-5",
-          )}
-        >
-          <Link
-            href="/"
-            aria-label="gwana tea house, home"
-            className={cn(
-              "inline-flex",
-              "focus-visible:outline-2 focus-visible:outline-offset-4",
-              OUTLINE.ring,
-            )}
+    <HeaderShell>
+      <div
+        className={cn(
+          "grid h-full grid-cols-[1fr_auto_1fr] items-center px-3",
+          "lg:px-6",
+        )}
+      >
+        {/* 왼쪽: 데스크톱은 메뉴, 모바일은 햄버거 하나. */}
+        <div className="flex items-center justify-start">
+          <HeaderMobileMenu className="lg:hidden" />
+          <nav
+            aria-label="Main"
+            className={cn("hidden items-center gap-6", "lg:flex")}
           >
-            <Image
-              src="/gwana-logo.png"
-              alt="gwana tea house"
-              width={1726}
-              height={676}
-              priority
-              /* 실제 렌더 폭. 로고 비율 2.553 × 높이(모바일 28px, 데스크톱 36px).
-                 이 값이 작으면 브라우저가 더 작은 후보를 받아 확대해 흐려진다. */
-              sizes="(min-width: 1024px) 92px, 72px"
-              className={cn("h-7 w-auto", "lg:h-9")}
-            />
-          </Link>
+            {NAV_ITEMS.map((item) => (
+              <HeaderNavLink key={item.href} {...item} />
+            ))}
+          </nav>
         </div>
 
-        <nav
-          aria-label="Main"
+        {/* 가운데: 로고. */}
+        <Link
+          href="/"
+          aria-label="gwana tea house, 홈"
           className={cn(
-            "hidden flex-1 items-center border-l uppercase",
-            "lg:flex",
-            BORDER.line,
+            "inline-flex justify-self-center",
+            "focus-visible:outline-2 focus-visible:outline-offset-4",
+            OUTLINE.ring,
           )}
         >
-          {NAV_ITEMS.map((item, index) => (
-            <HeaderNavLink
-              key={item.href}
-              {...item}
-              className={index === 0 ? "ml-7.5" : "ml-9"}
-            />
-          ))}
-        </nav>
+          <Image
+            src="/gwana-logo.png"
+            alt="gwana tea house"
+            width={1726}
+            height={676}
+            priority
+            /* 실제 렌더 폭. 로고 비율 2.553 × 높이(모바일 22px, 데스크톱 26px).
+               이 값이 작으면 브라우저가 더 작은 후보를 받아 확대해 흐려진다. */
+            sizes="(min-width: 1024px) 67px, 57px"
+            /*
+             * 로고 원본은 투명 배경 위 검정 획이다. 사진 위 투명 상태에서는
+             * 그대로 두면 읽히지 않으므로 반전시켜 흰 획으로 만든다.
+             * (알파는 그대로라 배경은 여전히 비어 있다.)
+             */
+            className={cn(
+              "h-7.5 w-auto transition-[filter] duration-300",
+              "lg:h-6.5",
+              "group-data-[solid=false]:invert",
+            )}
+          />
+        </Link>
 
-        <div className="ml-auto flex items-stretch">
+        {/* 오른쪽: 유틸리티. 모바일에서는 CART 만 남긴다. */}
+        <div className="flex items-center justify-end gap-1 lg:gap-4">
           <Link
             href={LOGIN_ITEM.href}
-            className={cn(RIGHT_CELL, "hidden", "lg:flex")}
+            className={cn(UTILITY_CELL, "hidden lg:inline-flex")}
           >
             {LOGIN_ITEM.label}
           </Link>
 
           <Link
-            href="/bag"
-            aria-label={`Bag, ${bagCount} ${bagCount === 1 ? "item" : "items"}`}
-            className={RIGHT_CELL}
+            href={CART_ITEM.href}
+            aria-label={`장바구니, 상품 ${cartCount}개`}
+            className={UTILITY_CELL}
           >
             <span aria-hidden>
-              BAG
-              <span className={cn("hidden", "lg:inline")}>
-                &nbsp;({bagCount})
-              </span>
+              {CART_ITEM.label} {cartCount}
             </span>
           </Link>
         </div>
       </div>
-    </header>
+    </HeaderShell>
   );
 }

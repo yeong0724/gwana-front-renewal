@@ -8,8 +8,8 @@ import { cn } from "@/lib/utils";
  * 여기 두어도 본문과 함께 페이드되고, `<main>` 밖이라 contentinfo 랜드마크도
  * 유지된다(§9.D). 반대로 헤더는 fixed라 여기 둘 수 없다. root layout이 갖는다.
  *
- * 상단 패딩은 헤더 높이의 사본이다. 헤더 치수를 바꾸면 §9 표와 이 값이 함께
- * 움직여야 한다.
+ * 상단 패딩은 헤더 높이(`HEADER_HEIGHT` = h-13 = 52px)의 사본이다. 바 높이를
+ * 바꾸면 이 값과 홈의 `-mt-13`이 함께 움직여야 한다.
  */
 export default function CommonLayout({
   children,
@@ -18,8 +18,7 @@ export default function CommonLayout({
 }>) {
   return (
     <>
-      {/* Clears the fixed bar: 48px + 8px inset on mobile, 60px on desktop. */}
-      <main className={cn("pt-14", "lg:pt-15")}>{children}</main>
+      <main className={cn("pt-13")}>{children}</main>
       <SiteFooter />
     </>
   );

@@ -41,8 +41,9 @@ export default function RootLayout({
     >
       <body
         className={cn(
-          "min-h-full text-[12px] leading-[1.4]",
-          BG.page,
+          // 레퍼런스의 기본 본문. UI 라벨은 여기서 모노로 따로 내려간다.
+          "min-h-full text-[13px] leading-normal",
+          BG.surface,
           TEXT.ink,
         )}
       >

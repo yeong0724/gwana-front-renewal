@@ -5,36 +5,40 @@ import {
   BRAND_LINE,
   BUSINESS_FIELDS,
   CONTACT_FIELDS,
+  FOOTER_COLUMNS,
   LEGAL_ENTITY,
   LEGAL_ITEMS,
   type BusinessField,
 } from "@/constants/business";
 import { BG, BORDER, OUTLINE, TEXT } from "@/constants/colors";
-import { HEADER_LABEL } from "@/constants/nav-items";
+import { BODY, LABEL, LABEL_KO, MONO_DATA } from "@/constants/typography";
 import { cn } from "@/lib/utils";
 
 /**
- * 헤더의 LOG IN / BAG 셀을 그대로 뒤집은 것. 폭(140px)과 좌측 괘선이 같아야
- * 위아래 바가 한 격자에서 나온 것으로 읽힌다. 모바일은 2칸 그리드라 폭을 풀고
- * 높이만 맞춘다.
+ * 푸터.
+ *
+ * 레퍼런스는 푸터에서 **처음으로 면색을 바꾼다**. 페이지 전체가 흰
+ * 바탕인데 여기서만 짙은 초록이 깔려, 스크롤이 끝났다는 신호가 된다.
+ * (이 페이지에서 명도가 뒤집히는 유일한 자리다. 섹션마다 뒤집으면 다른
+ * 사이트로 넘어온 것처럼 읽힌다.)
+ *
+ * 짙은 면 위에서는 accent(#c1242f)의 대비가 1.2:1 까지 무너지므로 쓰지 않는다.
+ * 글자는 chalk(7.5:1) / moss(4.8:1) 두 단만 쓴다.
+ *
+ * `#view` 안, `<main>` 밖에 산다:
+ * - `#view` **안** — 밖에 두면 라우트가 바뀌는 순간 문서 높이가 먼저 바뀌어
+ *   푸터가 튄다. 안에 두면 본문과 함께 0.3초 페이드된다.
+ * - `<main>` **밖** — main 안의 footer 는 페이지 푸터가 아니라 섹션 푸터로
+ *   취급돼 `contentinfo` 랜드마크가 사라진다.
  */
-const LEGAL_CELL = cn(
-  HEADER_LABEL,
-  "flex h-11 items-center justify-center px-4",
-  "lg:h-12 lg:w-35 lg:shrink-0",
-  TEXT.ink,
-  TEXT.inkHover,
-  "transition-colors duration-150",
-  "focus-visible:outline-2 focus-visible:-outline-offset-2",
-  OUTLINE.ring,
-);
 
-/** 값에 링크가 붙어도 줄 높이가 흔들리지 않도록 앵커는 inline으로 둔다. */
-const FIELD_LINK = cn(
-  TEXT.inkHover,
+const FOOTER_LINK = cn(
+  BODY,
   "transition-colors duration-150",
   "focus-visible:outline-2 focus-visible:outline-offset-2",
-  OUTLINE.ring,
+  TEXT.chalk,
+  TEXT.chalkHover,
+  OUTLINE.chalk,
 );
 
 /**
@@ -44,10 +48,10 @@ const FIELD_LINK = cn(
 function Field({ term, detail, href }: BusinessField) {
   return (
     <div className="contents">
-      <dt className={TEXT.muted}>{term}</dt>
-      <dd className={TEXT.ink}>
+      <dt className={TEXT.moss}>{term}</dt>
+      <dd className={TEXT.chalk}>
         {href ? (
-          <a href={href} className={FIELD_LINK}>
+          <a href={href} className={cn(TEXT.chalkHover, OUTLINE.chalk)}>
             {detail}
           </a>
         ) : (
@@ -59,115 +63,121 @@ function Field({ term, detail, href }: BusinessField) {
 }
 
 /**
- * 용어 열을 104px로 고정한다. 가장 긴 용어인 "사업자등록번호"(13px × 7자)가
- * 들어가는 최소 폭이라, 두 dl의 값 열이 같은 축에서 시작한다.
+ * 용어 열을 104px로 고정한다. 가장 긴 용어인 "사업자등록번호"가 들어가는
+ * 최소 폭이라, 두 dl의 값 열이 같은 축에서 시작한다.
  */
-const FIELD_LIST = "grid grid-cols-[6.5rem_1fr] gap-y-2";
+const FIELD_LIST = cn(MONO_DATA, "grid grid-cols-[6.5rem_1fr] gap-y-1.5");
 
-/**
- * 모든 라우트 하단에 붙는 공통 푸터. `#view` 안에 있으므로 페이지 전환 때
- * 본문과 함께 페이드된다(밖에 두면 문서 높이가 바뀌는 순간 튄다).
- */
 export function SiteFooter() {
   return (
-    <footer
-      className={cn(
-        "border-t text-[13px] leading-normal",
-        BG.page,
-        BORDER.line,
-        TEXT.ink,
-      )}
-    >
-      {/* 브랜드 칼럼은 헤더와 같은 4/12 = 33.33%. 오른쪽은 괘선으로 나눈다. */}
-      <div className={cn("lg:flex lg:items-stretch")}>
-        <div
-          className={cn("px-4 py-8", "lg:w-1/3 lg:shrink-0 lg:px-5 lg:py-12")}
-        >
+    <footer className={cn(BODY, BG.forest, TEXT.chalk)}>
+      {/* 1단: 링크 칼럼들 + 브랜드 문장. */}
+      <div
+        className={cn(
+          "grid gap-10 px-4 pt-14 pb-10",
+          "lg:grid-cols-12 lg:gap-6 lg:px-6 lg:pt-20 lg:pb-14",
+        )}
+      >
+        {FOOTER_COLUMNS.map((column) => (
+          <nav
+            key={column.title}
+            aria-label={column.title}
+            className="lg:col-span-2"
+          >
+            <h2 className={cn(LABEL_KO, "mb-4", TEXT.moss)}>{column.title}</h2>
+            <ul className="flex flex-col gap-2">
+              {column.items.map((item) => (
+                <li key={item.label}>
+                  {item.href.startsWith("http") ? (
+                    <a
+                      href={item.href}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className={FOOTER_LINK}
+                    >
+                      {item.label}
+                    </a>
+                  ) : (
+                    <Link href={item.href} className={FOOTER_LINK}>
+                      {item.label}
+                    </Link>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ))}
+
+        <p className={cn("max-w-[40ch]", "lg:col-span-4 lg:col-start-9")}>
+          {BRAND_LINE}
+        </p>
+      </div>
+
+      {/* 2단: 사업자 정보. 국내 통신판매는 표기 의무가 있어 접지 않고 편다. */}
+      <div
+        className={cn(
+          "border-t px-4 py-10",
+          "lg:px-6 lg:py-12",
+          BORDER.moss,
+        )}
+      >
+        <h2 className={cn(LABEL_KO, "mb-5", TEXT.moss)}>사업자 정보</h2>
+        <div className={cn("grid gap-x-12 gap-y-5", "lg:grid-cols-2 lg:gap-x-6")}>
+          <dl className={FIELD_LIST}>
+            {BUSINESS_FIELDS.map((field) => (
+              <Field key={field.term} {...field} />
+            ))}
+          </dl>
+          <dl className={FIELD_LIST}>
+            {CONTACT_FIELDS.map((field) => (
+              <Field key={field.term} {...field} />
+            ))}
+          </dl>
+        </div>
+      </div>
+
+      {/* 3단: 로고 + 저작권 + 법적 고지. */}
+      <div
+        className={cn(
+          "flex flex-col gap-6 border-t px-4 py-8",
+          "lg:flex-row lg:items-end lg:justify-between lg:px-6",
+          BORDER.moss,
+        )}
+      >
+        <div>
           <Link
             href="/"
-            aria-label="gwana tea house, home"
+            aria-label="gwana tea house, 홈"
             className={cn(
               "inline-flex",
               "focus-visible:outline-2 focus-visible:outline-offset-4",
-              OUTLINE.ring,
+              OUTLINE.chalk,
             )}
           >
+            {/* 로고 원본이 검정 획이라 짙은 면 위에서는 반전해 쓴다. */}
             <Image
               src="/gwana-logo.png"
               alt="gwana tea house"
               width={1726}
               height={676}
-              /* 로고 비율 2.553 × 렌더 높이 36px. 헤더 데스크톱과 같은 크기. */
-              sizes="92px"
-              className="h-9 w-auto"
+              sizes="82px"
+              className="h-8 w-auto invert"
             />
           </Link>
-          <p className={cn("mt-5 max-w-[36ch]", TEXT.muted)}>{BRAND_LINE}</p>
+          <p className={cn(LABEL, "mt-5", TEXT.moss)}>
+            © {new Date().getFullYear()} {LEGAL_ENTITY}
+          </p>
         </div>
 
-        <div
-          className={cn(
-            "border-t px-4 py-8",
-            "lg:flex-1 lg:border-t-0 lg:border-l lg:px-8 lg:py-12",
-            BORDER.line,
-          )}
-        >
-          {/* 두 묶음(사업자 / 연락처)을 열로 갈라, 행마다 괘선을 긋지 않는다. */}
-          <div className={cn("grid gap-x-12 gap-y-6", "lg:grid-cols-2")}>
-            <dl className={FIELD_LIST}>
-              {BUSINESS_FIELDS.map((field) => (
-                <Field key={field.term} {...field} />
-              ))}
-            </dl>
-            <dl className={FIELD_LIST}>
-              {CONTACT_FIELDS.map((field) => (
-                <Field key={field.term} {...field} />
-              ))}
-            </dl>
-          </div>
-        </div>
-      </div>
-
-      {/* 하단 바. 데스크톱에서 헤더와 같은 48px 높이로 맞춰 대칭을 만든다. */}
-      <div
-        className={cn(
-          "flex flex-col border-t",
-          "lg:flex-row-reverse lg:items-stretch",
-          BORDER.line,
-        )}
-      >
-        <div
-          className={cn(
-            "grid grid-cols-2 border-b",
-            "lg:flex lg:border-b-0",
-            BORDER.line,
-          )}
-        >
-          {LEGAL_ITEMS.map((item, index) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                LEGAL_CELL,
-                // 모바일은 두 칸 사이에만 선이 있고, 데스크톱은 둘 다 왼쪽에 선을 갖는다.
-                index === 0 ? "lg:border-l" : "border-l",
-                BORDER.line,
-              )}
-            >
-              {item.label}
-            </Link>
+        <ul className={cn("flex flex-wrap gap-x-6 gap-y-2")}>
+          {LEGAL_ITEMS.map((item) => (
+            <li key={item.href}>
+              <Link href={item.href} className={FOOTER_LINK}>
+                {item.label}
+              </Link>
+            </li>
           ))}
-        </div>
-
-        <p
-          className={cn(
-            "flex h-11 items-center px-4 uppercase",
-            "lg:h-12 lg:flex-1 lg:px-5",
-            TEXT.muted,
-          )}
-        >
-          © {new Date().getFullYear()} {LEGAL_ENTITY}. All rights reserved.
-        </p>
+        </ul>
       </div>
     </footer>
   );

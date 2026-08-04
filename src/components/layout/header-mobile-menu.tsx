@@ -13,23 +13,28 @@ import {
   SheetTrigger,
 } from "@/components/ui/shadcn-ui/sheet";
 import { BG, BORDER, OUTLINE, TEXT } from "@/constants/colors";
-import { cn } from "@/lib/utils";
 import {
   ACCOUNT_ITEM,
-  HEADER_LABEL,
+  CART_ITEM,
   LOGIN_ITEM,
   NAV_ITEMS,
-} from "../../constants/nav-items";
+} from "@/constants/nav-items";
+import { ACTION_LABEL, MENU_ITEM, MENU_TITLE } from "@/constants/typography";
+import { cn } from "@/lib/utils";
 import { useIsActive } from "./header-nav-link";
 
 /**
- * 시트 하단 액션 두 칸의 공통 박스. 두 버튼이 정확히 같은 크기여야 하므로
- * 높이/테두리/타이포를 여기서 한 번만 정하고 면색만 각자 덧씌운다.
+ * 시트 하단 액션 두 칸의 공통 박스.
+ *
+ * 레퍼런스의 쿠키 다이얼로그가 쓰는 짝과 같은 형태다: **채운 것 하나 +
+ * 테두리만 있는 것 하나**, 각진 모서리, 모노 대문자. 두 버튼이 정확히
+ * 같은 크기여야 하므로 높이/테두리/타이포를 여기서 한 번만 정하고
+ * 면색만 각자 덧씌운다.
  */
 const SHEET_ACTION = cn(
-  HEADER_LABEL,
-  "flex h-11 items-center justify-center border",
-  BORDER.line,
+  ACTION_LABEL,
+  "flex h-12 items-center justify-center border",
+  BORDER.ink,
   "transition-colors duration-150 active:translate-y-px",
   "focus-visible:outline-2 focus-visible:-outline-offset-2",
   OUTLINE.ring,
@@ -52,11 +57,13 @@ function MobileLink({
       aria-current={isActive ? "page" : undefined}
       onPointerDown={onSelect}
       className={cn(
-        HEADER_LABEL,
-        "border-b py-5",
+        MENU_ITEM,
+        // 줄마다 아래 괘선. 행 높이는 손가락이 닿는 크기(56px)를 넘긴다.
+        "flex items-center border-b py-5",
         BORDER.hairline,
         TEXT.ink,
-        isActive ? "font-bold" : "font-normal",
+        "transition-opacity duration-150 active:opacity-60",
+        isActive && "underline decoration-1 underline-offset-[6px]",
       )}
     >
       {label}
@@ -86,20 +93,17 @@ export function HeaderMobileMenu({ className }: { className?: string }) {
       open={open}
       onOpenChange={(next) => setOpenedAt(next ? pathname : null)}
     >
+      {/* 색은 헤더 껍데기를 따라간다. 사진 위에서는 흰 아이콘이 된다. */}
       <SheetTrigger
         className={cn(
-          "flex w-14 items-center justify-center border-r",
-          BORDER.line,
-          TEXT.ink,
-          TEXT.inkHover,
-          "transition-colors duration-150",
-          "focus-visible:outline-2 focus-visible:-outline-offset-2",
-          OUTLINE.ring,
+          "-ml-1.5 flex size-9 items-center justify-center text-current",
+          "transition-opacity duration-150 hover:opacity-60",
+          "focus-visible:outline-2 focus-visible:outline-offset-2",
           className,
         )}
       >
-        <MenuIcon className="size-5" strokeWidth={1.5} aria-hidden />
-        <span className="sr-only">Open menu</span>
+        <MenuIcon className="size-5" strokeWidth={1.75} aria-hidden />
+        <span className="sr-only">메뉴 열기</span>
       </SheetTrigger>
 
       <SheetContent
@@ -110,45 +114,39 @@ export function HeaderMobileMenu({ className }: { className?: string }) {
         // Esc는 다이얼로그 접근성상 남겨 둔다.
         onInteractOutside={(event) => event.preventDefault()}
         className={cn(
-          "px-6 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]",
-          BG.page,
+          "px-5 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]",
+          BG.surface,
+          TEXT.ink,
         )}
       >
         {/* 제목과 닫기 버튼을 한 행에 두어 X가 MENU와 같은 축에 놓이게 한다. */}
-        <div className="flex items-center justify-between gap-4">
-          <SheetTitle
-            className={cn(
-              HEADER_LABEL,
-              TEXT.muted,
-              "font-bold",
-              "text-[17px]",
-              TEXT.ink,
-            )}
-          >
-            MENU
-          </SheetTitle>
+        <div className="flex h-9 items-center justify-between gap-4">
+          <SheetTitle className={cn(MENU_TITLE, TEXT.ink)}>MENU</SheetTitle>
 
           <SheetClose
             className={cn(
               // 아이콘 박스(36px) 안쪽 여백만큼 당겨 글리프 끝을 본문 우측선에 맞춘다.
               "-mr-2 flex size-9 shrink-0 items-center justify-center",
               TEXT.ink,
-              TEXT.inkHover,
-              "transition-colors duration-150",
+              "transition-opacity duration-150 hover:opacity-60",
               "focus-visible:outline-2 focus-visible:-outline-offset-2",
               OUTLINE.ring,
             )}
           >
-            <XIcon className="size-5" strokeWidth={1.5} aria-hidden />
-            <span className="sr-only">Close menu</span>
+            <XIcon className="size-5" strokeWidth={1.75} aria-hidden />
+            <span className="sr-only">메뉴 닫기</span>
           </SheetClose>
         </div>
 
+        {/*
+         * 목록 위에 괘선을 한 줄 더 그어 제목과 항목을 끊는다. 항목마다
+         * 아래 괘선이 있으므로 위쪽 한 줄만 더하면 목록이 닫힌 블록이 된다.
+         */}
         <nav
           aria-label="Mobile"
-          className={cn("flex flex-col border-t", BORDER.hairline)}
+          className={cn("mt-5 flex flex-col border-t", BORDER.hairline)}
         >
-          {NAV_ITEMS.map((item) => (
+          {[...NAV_ITEMS, CART_ITEM].map((item) => (
             <MobileLink key={item.href} {...item} onSelect={close} />
           ))}
         </nav>
@@ -157,7 +155,7 @@ export function HeaderMobileMenu({ className }: { className?: string }) {
           <Link
             href={LOGIN_ITEM.href}
             onPointerDown={close}
-            className={cn(SHEET_ACTION, BG.ink, BG.inkHover, TEXT.white)}
+            className={cn(SHEET_ACTION, BG.ink, TEXT.white, "hover:opacity-85")}
           >
             {LOGIN_ITEM.label}
           </Link>
@@ -165,7 +163,7 @@ export function HeaderMobileMenu({ className }: { className?: string }) {
           <Link
             href={ACCOUNT_ITEM.href}
             onPointerDown={close}
-            className={cn(SHEET_ACTION, BG.page, BG.hairlineHover, TEXT.ink)}
+            className={cn(SHEET_ACTION, BG.transparent, BG.surfaceHover, TEXT.ink)}
           >
             {ACCOUNT_ITEM.label}
           </Link>

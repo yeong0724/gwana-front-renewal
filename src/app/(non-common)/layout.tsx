@@ -15,5 +15,5 @@ export default function NonCommonLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <main className={cn("pt-14", "lg:pt-15")}>{children}</main>;
+  return <main className={cn("pt-13")}>{children}</main>;
 }
