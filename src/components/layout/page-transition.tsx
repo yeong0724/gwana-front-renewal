@@ -15,50 +15,71 @@ const LOCK = "page-transitioning";
 const DURATION = 0.3;
 /** Releases the lock if a navigation never resolves. */
 const UNLOCK_FALLBACK_MS = 3000;
+const SCROLL_KEYS = new Set([
+  "ArrowUp",
+  "ArrowDown",
+  "PageUp",
+  "PageDown",
+  "Home",
+  "End",
+  " ",
+]);
 
 export function PageTransition({ children }: { children: React.ReactNode }) {
   const viewRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
-  const isFirstRender = useRef(true);
+  const previousPathname = useRef(pathname);
   const bypassPopstate = useRef(false);
 
-  // show(): reset scroll, then fade the freshly rendered route back in.
+  // show(): measure the committed route, reset scroll, then fade it back in.
   useIsomorphicLayoutEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
+    if (previousPathname.current === pathname) return;
+    previousPathname.current = pathname;
 
-    const smoother = ScrollSmoother.get();
-    if (smoother) {
-      smoother.scrollTo(0);
-    } else {
-      window.scrollTo(0, 0);
-    }
+    document.documentElement.classList.add(LOCK);
+    gsap.set(viewRef.current, { opacity: 0 });
+    let tween: gsap.core.Tween | undefined;
 
-    const tween = gsap.fromTo(
-      viewRef.current,
-      { opacity: 0 },
-      {
+    // Wait for this commit's pin cleanup/setup before measuring. Reset AFTER
+    // refresh so its scroll restoration cannot undo the new route's position.
+    const frame = window.requestAnimationFrame(() => {
+      ScrollTrigger.refresh();
+      // Hash destinations retain Next's anchor scrolling.
+      if (!window.location.hash) {
+        const smoother = ScrollSmoother.get();
+        if (smoother) smoother.scrollTo(0, false);
+        else window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      }
+
+      tween = gsap.to(viewRef.current, {
         duration: DURATION,
         ease: "power1.in",
         opacity: 1,
         onComplete: () => document.documentElement.classList.remove(LOCK),
-      },
-    );
-
-    // A new route means new pinned sections, so ScrollTrigger must re-measure.
-    const refresh = window.setTimeout(() => ScrollTrigger.refresh(), 1);
+      });
+    });
 
     return () => {
-      tween.kill();
-      window.clearTimeout(refresh);
+      tween?.kill();
+      window.cancelAnimationFrame(frame);
+      document.documentElement.classList.remove(LOCK);
     };
   }, [pathname]);
 
   useEffect(() => {
     let unlockTimer = 0;
+
+    // pointer-events only blocks clicks: wheel/trackpad momentum and touch
+    // scrolling otherwise move the new route during its fade-in.
+    const preventScroll = (event: Event) => {
+      if (document.documentElement.classList.contains(LOCK)) {
+        event.preventDefault();
+      }
+    };
+    const preventScrollKey = (event: KeyboardEvent) => {
+      if (SCROLL_KEYS.has(event.key)) preventScroll(event);
+    };
 
     const hide = (onComplete: () => void) => {
       document.documentElement.classList.add(LOCK);
@@ -117,7 +138,11 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
 
       if (document.documentElement.classList.contains(LOCK)) return;
 
-      hide(() => router.push(`${url.pathname}${url.search}${url.hash}`));
+      hide(() =>
+        router.push(`${url.pathname}${url.search}${url.hash}`, {
+          scroll: Boolean(url.hash),
+        }),
+      );
     };
 
     // Back and forward get the identical transition. The browser has already
@@ -140,10 +165,16 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
     };
 
     document.addEventListener("click", handleClick, true);
+    window.addEventListener("wheel", preventScroll, { passive: false });
+    window.addEventListener("touchmove", preventScroll, { passive: false });
+    window.addEventListener("keydown", preventScrollKey);
     window.addEventListener("popstate", handlePopstate);
 
     return () => {
       document.removeEventListener("click", handleClick, true);
+      window.removeEventListener("wheel", preventScroll);
+      window.removeEventListener("touchmove", preventScroll);
+      window.removeEventListener("keydown", preventScrollKey);
       window.removeEventListener("popstate", handlePopstate);
       window.clearTimeout(unlockTimer);
     };

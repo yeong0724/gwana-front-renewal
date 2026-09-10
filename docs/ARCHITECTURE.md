@@ -645,6 +645,34 @@ Next가 리스너를 먼저 등록하도록 바뀌면 `stopImmediatePropagation`
 전환 중에는 `html.page-transitioning #view { pointer-events: none }`로 중복 클릭을 막는다.
 헤더는 `#view` 바깥이라 전환 중에도 고정된 채 남는다(레퍼런스와 동일).
 
+### 8.4 페이지 이동 후 스크롤이 남는 문제 (2026-09-10 수정)
+
+**실제로 재현된 원인은 전환 중 스크롤 입력 누수다.** `pointer-events: none`은
+휠·트랙패드·터치 스크롤을 막지 않는다. 경로 변경 때 `scrollTo(0)`을 한 번 실행해도,
+페이드인 중 들어온 입력으로 새 페이지가 다시 내려간다. Chrome 1440×900에서 홈의
+1800px/6429px 지점에서 이동하면서 전환 중 휠 입력을 보내면 `/shop`, `/terms`,
+`/privacy` 모두 최종 `scrollY = 30`, 콘텐츠 transform의 y도 `-30`으로 남았다.
+입력을 멈춘 뒤 이동할 때는 기존 코드에서도 0이었다. 따라서 GSAP 재측정이 위치를
+덮어썼다는 가설과 실제 확인한 원인을 혼동하지 말 것.
+
+- `page-transitioning` 동안만 wheel/touchmove 기본 동작과 스크롤 키를 막는다.
+  휠·터치 리스너는 `passive: false`가 필요하다. 전환 종료/실패 타임아웃으로
+  클래스가 사라지면 입력이 다시 허용된다.
+- 일반 경로 이동은 `router.push(..., { scroll: false })`로 전환 컴포넌트가 스크롤을
+  담당한다. 해시가 있으면 Next의 앵커 이동을 유지하고 최상단 초기화를 건너뛴다.
+- 경로 커밋 다음 animation frame에 `ScrollTrigger.refresh()` → 즉시 최상단 이동 →
+  0.3초 페이드인 순으로 실행한다. 기존의 초기화 **뒤** 1ms 타이머로 refresh하던
+  순서는 제거했다. 페이지별 핀 정리/생성 후 높이를 측정하려는 목적이다.
+- 최초 진입은 pathname ref로 구분한다. Strict Mode의 effect 재실행 때문에
+  최초 진입까지 페이지 전환으로 처리하지 않는다.
+
+회귀 검증은 헤드리스 Chrome에서 `Page.captureScreenshot`으로 프레임을 진행시키며
+실제 CDP `Input.dispatchMouseEvent(type: mouseWheel)` 입력을 보냈다. 전환 종료와
+입력 도착이 경합하지 않도록 새 페이지 페이드인의 opacity가 0.5 미만일 때까지
+입력하고, 이후 위치를 관찰한다. 수정 후 1440×900 및 390×900에서 세 경로 모두
+`scrollY = 0`, wrapper scrollTop 0, 콘텐츠 y 0을 확인했다. 모바일에서는
+ScrollSmoother가 없으므로 transform은 `none`이다.
+
 ---
 
 ## 9. className / 색 컨벤션 (필수)
