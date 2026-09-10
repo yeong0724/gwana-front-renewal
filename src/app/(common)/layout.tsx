@@ -1,4 +1,5 @@
 import { SiteFooter } from "@/components/layout/site-footer";
+import { HEADER_OFFSET } from "@/constants/nav-items";
 import { cn } from "@/lib/utils";
 
 /**
@@ -18,8 +19,8 @@ export default function CommonLayout({
 }>) {
   return (
     <>
-      {/* Clears the fixed bar: 48px + 8px inset on mobile, 60px on desktop. */}
-      <main className={cn("pt-14", "lg:pt-15")}>{children}</main>
+      {/* 고정 바(52px)를 비켜 준다. 값은 바와 같은 상수에서 온다. */}
+      <main className={cn(HEADER_OFFSET)}>{children}</main>
       <SiteFooter />
     </>
   );

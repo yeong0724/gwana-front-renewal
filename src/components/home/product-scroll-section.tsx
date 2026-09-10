@@ -145,8 +145,16 @@ export function ProductScrollSection() {
       ref={sectionRef}
       /* No pin under reduced motion, so the 600vh scroll runway collapses too. */
       className={cn(
+        /*
+         * 배경을 명시하는 것이 중요하다. 이 섹션은 히어로의 고정된 사진 **위로**
+         * 올라와 그것을 덮는 역할을 한다. 모바일에서 히어로 핀은
+         * `position: fixed`로 걸리는데(스무더가 없어서), fixed 요소는 조상의
+         * `overflow-hidden`에 잘리지 않는다. 그래서 여기가 불투명하지 않으면
+         * 사진이 이 섹션을 그대로 뚫고 비친다. 흰색을 `<body>`에 기대면 안 된다.
+         */
         "relative overflow-hidden border-b",
         "lg:h-[600vh]",
+        BG.page,
         BORDER.line,
         "motion-reduce:lg:h-auto",
       )}

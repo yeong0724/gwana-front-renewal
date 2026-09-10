@@ -1,3 +1,4 @@
+import { HEADER_OFFSET } from "@/constants/nav-items";
 import { cn } from "@/lib/utils";
 
 /**
@@ -15,5 +16,5 @@ export default function NonCommonLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <main className={cn("pt-14", "lg:pt-15")}>{children}</main>;
+  return <main className={cn(HEADER_OFFSET)}>{children}</main>;
 }

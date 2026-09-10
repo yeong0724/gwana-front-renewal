@@ -71,4 +71,9 @@ export const OUTLINE = {
 export const SCRIM = {
   heroBottom:
     "bg-gradient-to-t from-[#000000]/70 via-[#000000]/32 to-transparent",
+  /**
+   * 투명 헤더가 사진 위에 얹혀 있을 때 흰 글자를 살리는 상단 가림막.
+   * 바 높이의 180%까지 흘려서 경계가 선으로 보이지 않게 한다.
+   */
+  heroTop: "bg-gradient-to-b from-[#000000]/45 to-transparent",
 } as const;

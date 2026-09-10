@@ -86,19 +86,20 @@ export function HeaderMobileMenu({ className }: { className?: string }) {
       open={open}
       onOpenChange={(next) => setOpenedAt(next ? pathname : null)}
     >
+      {/*
+       * 트리거만 새 바에 맞춰 갈아탔다(칸막이 셀 → 얹히는 아이콘 버튼).
+       * 시트 안쪽은 손대지 않는다. `-ml-1.5`는 아이콘 박스(36px)의 안쪽 여백만큼
+       * 되당겨 글리프 왼끝을 바의 좌측 패딩선(px-3)에 맞추는 값이다.
+       */}
       <SheetTrigger
         className={cn(
-          "flex w-14 items-center justify-center border-r",
-          BORDER.line,
-          TEXT.ink,
-          TEXT.inkHover,
-          "transition-colors duration-150",
-          "focus-visible:outline-2 focus-visible:-outline-offset-2",
+          "-ml-1.5 flex size-9 items-center justify-center text-current transition-opacity duration-150 hover:opacity-60",
+          "focus-visible:outline-2 focus-visible:outline-offset-2",
           OUTLINE.ring,
           className,
         )}
       >
-        <MenuIcon className="size-5" strokeWidth={1.5} aria-hidden />
+        <MenuIcon className="size-5" strokeWidth={1.75} aria-hidden />
         <span className="sr-only">Open menu</span>
       </SheetTrigger>
 
