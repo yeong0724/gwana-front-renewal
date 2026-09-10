@@ -201,8 +201,8 @@ export function ProductScrollSection() {
               loading="eager"
               fetchPriority="high"
               className={cn(
-                "h-auto w-auto max-h-[72%] max-w-[62%] object-contain",
-                "lg:max-h-[48vh] lg:max-w-none",
+                "h-auto w-auto max-h-[84%] max-w-[62%] object-contain",
+                "lg:max-h-[54vh] lg:max-w-none",
               )}
             />
           </div>
