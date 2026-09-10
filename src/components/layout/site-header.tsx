@@ -9,6 +9,7 @@ import { HeaderMobileMenu } from "./header-mobile-menu";
 import { HeaderNavLink } from "./header-nav-link";
 import { HeaderShell } from "./header-shell";
 
+//
 /**
  * 오른쪽 유틸리티 셀. 왼쪽 메뉴와 같은 라벨 벌을 쓰되 활성 표시는 하지 않는다
  * (레퍼런스도 LOGIN/CART 에는 현재 위치 표시를 붙이지 않는다).
