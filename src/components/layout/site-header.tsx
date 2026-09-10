@@ -57,13 +57,13 @@ export function SiteHeader({ bagCount = 0 }: { bagCount?: number }) {
             <Image
               src="/gwana-logo.png"
               alt="gwana tea house"
-              width={1726}
+              width={2048}
               height={676}
               priority
               /* 실제 렌더 폭. 로고 비율 2.553 × 높이(모바일 28px, 데스크톱 36px).
                  이 값이 작으면 브라우저가 더 작은 후보를 받아 확대해 흐려진다. */
-              sizes="(min-width: 1024px) 92px, 72px"
-              className={cn("h-7 w-auto", "lg:h-9")}
+              sizes="(min-width: 1024px) 2048px, 676px"
+              className={cn("h-7 w-auto", "lg:h-10")}
             />
           </Link>
         </div>

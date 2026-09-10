@@ -12,15 +12,25 @@ export type BusinessField = {
   href?: string;
 };
 
+/** 매장 주소. 푸터의 사업자 정보와 홈의 방문 안내가 같은 문자열을 읽는다. */
+export const STORE_ADDRESS = "경남 하동군 화개면 목압길 24-2 (1층 관아수제차)";
+
 /** 상호 / 대표 / 등록번호 / 소재지. */
 export const BUSINESS_FIELDS: BusinessField[] = [
   { term: "상호명", detail: "관아수제차" },
   { term: "대표자", detail: "김정옥" },
   { term: "사업자등록번호", detail: "613-19-89889" },
-  {
-    term: "주소",
-    detail: "경남 하동군 화개면 목압길 24-2 (1층 관아수제차)",
-  },
+  { term: "주소", detail: STORE_ADDRESS },
+];
+
+/**
+ * TODO: 실제 영업시간으로 교체할 것. 아래는 자리표시 값이다.
+ * 이 파일의 나머지(사업자 정보·연락처)는 실제 값이므로 섞이지 않게 주의한다.
+ */
+export const OPENING_HOURS: BusinessField[] = [
+  { term: "월 - 금", detail: "09:00 - 18:00" },
+  { term: "토요일", detail: "10:00 - 17:00" },
+  { term: "일요일", detail: "휴무" },
 ];
 
 /** 연락 수단. 전부 클릭 가능한 스킴을 붙인다. */

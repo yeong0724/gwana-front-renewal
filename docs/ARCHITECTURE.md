@@ -10,6 +10,8 @@
 
 가와나 티하우스(한국 차 브랜드)의 커머스 프론트엔드.
 디자인/인터랙션 레퍼런스는 **https://postevand.com** (덴마크 생수 브랜드, Shopify Liquid + GSAP 3.11.3).
+방문 안내 섹션(§6.3)만 예외로 **https://www.limon.no** 를 참고했다. 그 한 섹션의
+스티커 인터랙션만 가져온 것이고, 레이아웃·팔레트·타입은 여전히 postevand 계열이다.
 
 레퍼런스를 "느낌만 참고"하는 것이 아니라 **수치까지 복제**하는 것이 이 프로젝트의 방침이다.
 그래서 아래 규칙이 적용된다.
@@ -314,6 +316,82 @@ SplitText.create(el, { type: "lines", mask: "lines" });
 ```
 
 모바일(<1024px)은 레퍼런스와 동일하게 핀 없이 세로 스택 + 진입 리빌만 한다.
+
+### 6.3 방문 안내 `visit-section.tsx` (2026-09-10 추가)
+
+레퍼런스가 **postevand.com이 아니다.** 이 섹션만 <https://www.limon.no/>(Mono
+빌더로 만든 노르웨이 식당 사이트)의 "스크롤을 따라오다 아래 경계에서 사라지는
+스티커"를 옮긴 것이다. 나머지 규칙(팔레트·괘선·타입 스케일)은 우리 것을 따랐다.
+
+**원본의 정체: GSAP이 아니라 CSS 한 줄이다.**
+
+`firecrawl_scrape`로 받은 인라인 스타일에서 확인했다. 연속된 두 행에 같은 PNG를
+깔고 끝이다.
+
+```css
+/* limon.no, #r4902(영업시간 행) 와 #r1480(팔로우 행) 에 동일하게 */
+background-image: url("/uploads/.../157686534_....png");
+background-repeat: no-repeat;
+background-position: 100% 100%;
+background-attachment: fixed;      /* ← 전부 이 한 줄이 한다 */
+```
+
+`background-attachment: fixed`인 배경은 **뷰포트를 기준으로 자리를 잡되 그 요소의
+박스 안에서만 그려진다.** 그래서 스크롤해도 화면 우측 하단에 붙어 있고, 행의 위
+경계에서 나타나 아래 경계에서 잘려 사라진다. 두 행이 같은 배경을 공유하므로 행
+경계를 지날 때 배경색만 바뀌고 스티커는 이어져 보인다. 1199px 이하에서는
+`background-image: none`으로 끈다.
+
+**그대로 못 쓰는 이유와 대체 구현.**
+
+`#smooth-content`에 transform이 걸려 있으면 `background-attachment: fixed`도
+`position: fixed`와 똑같이 뷰포트가 아니라 그 조상을 기준으로 잡는다(§4). 스무더가
+있는 데스크톱에서 효과가 죽으므로 GSAP으로 옮겼다. 잘라내는 쪽은 원본과 같은
+`overflow-hidden`이다.
+
+블록의 문서상 위치를 top, 높이를 H, 스크롤을 s, 뷰포트 높이를 vh라 하면
+스티커의 아래끝을 화면 아래끝에 붙이는 값은
+
+```
+y = (s + vh) - (top + H)
+```
+
+이고, ScrollTrigger 구간을 `top bottom` → `bottom top`으로 잡으면 s가
+`top - vh`에서 `top + H`까지 움직이므로 **y는 -H에서 +vh까지 정확히 선형**이다.
+즉 아래 한 줄이 위 식과 같다. 이징을 주면 그 등식이 깨져 배경이 미끄러진다.
+
+```ts
+gsap.fromTo(sticker,
+  { y: () => -block.offsetHeight },
+  { y: () => window.innerHeight, ease: "none",
+    scrollTrigger: { trigger: block, start: "top bottom", end: "bottom top",
+                     scrub: true, invalidateOnRefresh: true } });
+```
+
+블록 두 개에 각각 물리는데도 화면에서 하나로 이어져 보인다. 두 식이 같은 절대
+좌표(화면 아래끝)를 가리키기 때문이다.
+
+**함정 세 가지.**
+
+- **회전은 안쪽 요소에 준다.** GSAP은 transform을 만질 때 개별 속성
+  (`translate` / `rotate` / `scale`)을 `none`으로 덮어쓴다. Tailwind v4의
+  `rotate-*`는 `transform`이 아니라 `rotate:` 속성이라, y를 받는 래퍼에 주면
+  조용히 지워진다. 그래서 래퍼(y) / 안쪽(rotate)으로 나눴다.
+- **오른쪽 아래 모서리는 본문이 비운다.** 처음엔 연락처 버튼이 스티커에 깔려
+  검정 위 검정이 됐다. 원본은 본문을 `.container-fixed`로 묶어 이 모서리를 열어
+  둔다. 같은 뜻으로 블록 패딩을 `lg:pr-[24vw]`로 잡았다(= 스티커 우측 여백 6vw +
+  폭 13vw + 여유). 가로 패딩을 `px`가 아니라 좌/우로 나눠 적은 것은, 같은 lg
+  레이어에서 `px`와 `pr`의 승부가 생성 순서에 달려 있어서다.
+- **모바일·reduced motion은 CSS로 끈다**(`hidden lg:block motion-reduce:lg:hidden`).
+  JS 분기를 두지 않는다. 숨겨진 뒤엔 잴 것도 없으므로 트리거도 만들지 않는다.
+
+내용은 실제 값(주소·연락처)을 쓰되 **영업시간은 자리표시**다.
+`business.ts`의 `OPENING_HOURS`에 TODO로 표시해 두었다. 원본의 SNS 아이콘 자리는
+없는 계정을 만들지 않고 실제 연락 수단(전화/휴대전화/이메일)으로 바꿨다.
+
+**실측 검증** (1368x871, 실제 휠 스크롤): 스티커가 화면 하단 40px 위
+(`bottom-10`)에 고정된 채 본문만 올라가고, 두 번째 블록의 아래 경계를 지나며
+아래에서부터 잘려 사라지는 것을 확인했다. 푸터에는 넘어가지 않는다.
 
 ---
 
