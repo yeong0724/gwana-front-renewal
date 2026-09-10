@@ -37,7 +37,8 @@ export const BAR_LABEL =
   "font-mono text-[11px] leading-none uppercase lg:text-[13px]";
 
 /**
- * 고정 바 높이(52px)와, 그 아래로 본문을 밀어내는 짝값들.
+ * 고정 바 높이(모바일 45px, 데스크톱 56px)와 본문 위치의 짝값들.
+ * 모바일은 기존 56px에서 약 20% 축소했다. 데스크톱 본문 여백은 유지한다.
  *
  * **세 값은 항상 같이 움직인다.** 바 높이만 고치면 모든 라우트의 본문이
  * 바 밑으로 파고들고, 홈은 히어로가 바만큼 어긋난다.
@@ -45,6 +46,6 @@ export const BAR_LABEL =
  * - `HEADER_OFFSET` : 계열 layout의 `<main>` 상단 패딩
  * - `HEADER_PULL`   : 사진을 화면 맨 위까지 올리는 홈만 되끌어 올리는 값
  */
-export const HEADER_HEIGHT = "h-14";
-export const HEADER_OFFSET = "pt-13";
-export const HEADER_PULL = "-mt-13";
+export const HEADER_HEIGHT = "h-[45px] lg:h-14";
+export const HEADER_OFFSET = "pt-[45px] lg:pt-13";
+export const HEADER_PULL = "-mt-[45px] lg:-mt-13";

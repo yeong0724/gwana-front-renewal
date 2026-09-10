@@ -56,7 +56,7 @@ function MobileLink({
         "border-b py-5",
         BORDER.hairline,
         TEXT.ink,
-        isActive ? "font-bold" : "font-normal",
+        isActive ? "font-bold underline" : "font-normal",
       )}
     >
       {label}
