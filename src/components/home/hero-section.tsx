@@ -336,8 +336,8 @@ export function HeroSection() {
               마스크(overflow-hidden)와 pt/pb는 워드마크 글자와 같은 이유다. */}
           <p
             className={cn(
-              "overflow-hidden pt-[0.25em] pb-[0.06em] text-[3.4vw] leading-none",
-              "lg:text-[1.4vw]",
+              "overflow-hidden pt-[0.25em] pb-[0.06em] pl-[0.3em] text-[3.4vw] leading-none",
+              "lg:text-[1.6vw]",
             )}
           >
             <span className="hero-eyebrow inline-block">{EYEBROW}</span>

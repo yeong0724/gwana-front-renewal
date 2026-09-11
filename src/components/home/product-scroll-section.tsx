@@ -201,7 +201,7 @@ export function ProductScrollSection() {
           >
             <Image
               ref={productRef}
-              src="/product-tin.jpg"
+              src="/woojean_box.png"
               alt="가와나 티하우스 차통"
               width={1024}
               height={1024}
