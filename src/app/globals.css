@@ -155,6 +155,19 @@
   }
   html {
     @apply font-sans;
+    /*
+     * 가로 고무줄 스크롤(elastic overscroll)을 끈다.
+     *
+     * 이 문서는 가로로 넘치는 것이 없다(캐러셀 트랙은 overflow-hidden 안에
+     * 있다). 그래도 브라우저는 가로 드래그를 오버스크롤로 받아 **스크롤되는
+     * 내용만** 옆으로 민다. 모바일에서 히어로 사진은 ScrollTrigger 핀이
+     * `position: fixed`로 걸어두므로(스무더가 없어 pinType이 fixed다, §6.1)
+     * 그 사진은 따라 밀리지 않는다. 그래서 여백을 좌우로 드래그하면 흰 섹션이
+     * 쓸리면서 뒤에 고정된 히어로 사진이 드러났다.
+     *
+     * 세로(`-y`)는 건드리지 않는다. 당겨서 새로고침과 스크롤 체이닝은 그대로다.
+     */
+    overscroll-behavior-x: none;
   }
   /* No second click can stack while a page transition is playing. */
   html.page-transitioning #view {

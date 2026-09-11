@@ -41,6 +41,7 @@ export type ColorName = keyof typeof COLOR;
 
 /** 배경색. */
 export const BG = {
+  hairline: "bg-[#e5e5e5]",
   instagram: "bg-linear-to-tr from-[#ffcf55] via-[#ee2a7b] to-[#6228d7]",
   naver: "bg-[#03c75a]",
   footer: "bg-[#3c4d3d]",

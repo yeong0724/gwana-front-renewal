@@ -1,18 +1,16 @@
-"use client";
+'use client';
 
-import { useRef } from "react";
-import Image from "next/image";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useRef } from 'react';
+import Image from 'next/image';
 
-import {
-  OPENING_HOURS,
-  STORE_ADDRESS,
-} from "@/constants/business";
-import { BG, BORDER, OUTLINE, TEXT } from "@/constants/colors";
-import { HEADER_LABEL } from "@/constants/nav-items";
-import { useIsomorphicLayoutEffect } from "@/hooks/useIsomorphicLayoutEffect";
-import { cn } from "@/lib/utils";
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+import { OPENING_HOURS, STORE_ADDRESS } from '@/constants/business';
+import { BG, BORDER, OUTLINE, TEXT } from '@/constants/colors';
+import { HEADER_LABEL } from '@/constants/nav-items';
+import { useIsomorphicLayoutEffect } from '@/hooks/useIsomorphicLayoutEffect';
+import { cn } from '@/lib/utils';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -32,19 +30,19 @@ gsap.registerPlugin(ScrollTrigger);
  * (`position: fixed`가 깨지는 것과 같은 이유, §4). 그래서 GSAP으로 옮겼다.
  * 잘라내는 쪽은 원본과 같다. 블록마다 `overflow-hidden`이다.
  */
-const STICKER = "visit-sticker";
+const STICKER = 'visit-sticker';
 
 const SOCIAL_LINKS = [
   {
-    label: "인스타그램",
-    href: "https://www.instagram.com/gwana_tea_house/",
-    icon: "/instagram.svg",
+    label: '인스타그램',
+    href: 'https://www.instagram.com/gwana_tea_house/',
+    icon: '/instagram.svg',
     background: BG.instagram,
   },
   {
-    label: "네이버 스마트스토어",
-    href: "https://smartstore.naver.com/gwana",
-    icon: "/naver.svg",
+    label: '네이버 스마트스토어',
+    href: 'https://smartstore.naver.com/gwana',
+    icon: '/naver.svg',
     background: BG.naver,
   },
 ] as const;
@@ -71,7 +69,7 @@ const STICKER_TO = () => window.innerHeight;
  * 가로 패딩을 `px`가 아니라 좌/우로 나눠 적는 이유는, 같은 lg 레이어에서
  * `px`와 `pr`이 겹칠 때 어느 쪽이 이기는지가 생성 순서에 달려 있기 때문이다.
  */
-const BLOCK_PAD = cn("px-4", "lg:pr-[24vw] lg:pl-[4.6667vw]");
+const BLOCK_PAD = cn('px-4', 'lg:pr-[24vw] lg:pl-[4.6667vw]');
 
 /**
  * 사용자가 제공한 FRESH TEA 가방 이미지. 원본에 기울기가 있으므로 별도로
@@ -84,9 +82,9 @@ function Sticker() {
       className={cn(
         // 모바일에서는 원본도 끈다(원본은 1199px 이하에서 background-image: none).
         STICKER,
-        "pointer-events-none absolute right-[12vw] bottom-50 hidden",
-        "lg:block",
-        "motion-reduce:lg:hidden",
+        'pointer-events-none absolute right-[12vw] bottom-15 hidden',
+        'lg:block',
+        'motion-reduce:lg:hidden'
       )}
     >
       <Image
@@ -96,9 +94,7 @@ function Sticker() {
         height={1240}
         priority
         sizes="(min-width: 1600px) 208px, (min-width: 1231px) 13vw, 160px"
-        className={cn(
-          "h-auto w-[20vw] max-w-100 min-w-40",
-        )}
+        className={cn('h-auto w-[20vw] max-w-100 min-w-40')}
       />
     </div>
   );
@@ -112,10 +108,10 @@ export function VisitSection() {
 
     mm.add(
       {
-        isDesktop: "(min-width: 1024px)",
+        isDesktop: '(min-width: 1024px)',
         // 여집합을 반드시 적는다. 없으면 좁은 화면에서 콜백이 아예 안 돈다(§5).
-        isMobile: "(max-width: 1023px)",
-        reduce: "(prefers-reduced-motion: reduce)",
+        isMobile: '(max-width: 1023px)',
+        reduce: '(prefers-reduced-motion: reduce)',
       },
       (context) => {
         const { isDesktop, reduce } = context.conditions as {
@@ -127,9 +123,7 @@ export function VisitSection() {
         // 둘 다 스티커가 CSS로 숨겨져 있는 상태다. 측정할 것이 없다.
         if (!isDesktop || reduce) return;
 
-        const stickers =
-          sectionRef.current?.querySelectorAll<HTMLElement>(`.${STICKER}`) ??
-          [];
+        const stickers = sectionRef.current?.querySelectorAll<HTMLElement>(`.${STICKER}`) ?? [];
 
         stickers.forEach((sticker) => {
           // 스티커를 잘라내는 블록 = 직계 부모. 둘을 따로 물려도 화면에서는
@@ -143,56 +137,50 @@ export function VisitSection() {
             { y: () => STICKER_FROM(block) },
             {
               y: STICKER_TO,
-              ease: "none",
+              ease: 'none',
               scrollTrigger: {
                 trigger: block,
-                start: "top bottom",
-                end: "bottom top",
+                start: 'top bottom',
+                end: 'bottom top',
                 scrub: true,
                 // 창 크기가 바뀌면 H와 vh가 둘 다 바뀐다. 함수값을 다시 읽어야 한다.
                 invalidateOnRefresh: true,
               },
-            },
+            }
           );
         });
       },
-      sectionRef,
+      sectionRef
     );
 
     return () => mm.revert();
   }, []);
 
   return (
-    <section ref={sectionRef} className={cn(BG.page, TEXT.ink)}>
+    <section ref={sectionRef} className={cn(BG.page, TEXT.ink, BORDER.line, 'border-t')}>
       {/* 영업시간. 푸터와 같은 1/3 격자를 써서 같은 자에서 나온 것으로 읽힌다. */}
-      <div
-        className={cn("relative overflow-hidden py-20", "lg:py-32", BLOCK_PAD)}
-      >
+      <div className={cn('relative overflow-hidden py-20', 'lg:py-32', BLOCK_PAD)}>
         <Sticker />
 
-        <div className={cn("relative", "lg:flex lg:items-start")}>
+        <div className={cn('relative', 'lg:flex lg:items-start')}>
           <h2
             className={cn(
-              "text-[32px] leading-none tracking-[-0.01em]",
-              "lg:w-1/3 lg:shrink-0 lg:text-[3.2vw]",
+              'text-[32px] leading-none tracking-[-0.01em]',
+              'lg:w-1/3 lg:shrink-0 lg:text-[3.2vw]'
             )}
           >
             영업시간
           </h2>
 
-          <div className={cn("mt-10", "lg:mt-0 lg:flex-1")}>
-            <p className={cn(HEADER_LABEL, "uppercase")}>
-              하동 화개 · 관아수제차
-            </p>
-            <p className={cn("mt-3 text-[13px]", TEXT.muted)}>
-              {STORE_ADDRESS}
-            </p>
+          <div className={cn('mt-10', 'lg:mt-0 lg:flex-1')}>
+            <p className={cn(HEADER_LABEL, 'uppercase')}>하동 화개 · 관아수제차</p>
+            <p className={cn('mt-3 text-[13px]', TEXT.muted)}>{STORE_ADDRESS}</p>
 
             {/* 요일 열은 7rem. 가장 긴 "월 - 금"이 들어가고 값 열이 한 축에서 시작한다. */}
             <dl
               className={cn(
-                "mt-8 grid max-w-125 grid-cols-[7rem_1fr] gap-y-3 border-t pt-6 text-[15px]",
-                BORDER.line,
+                'mt-8 grid max-w-125 grid-cols-[7rem_1fr] gap-y-3 border-t pt-6 text-[15px]',
+                BORDER.line
               )}
             >
               {OPENING_HOURS.map(({ term, detail }) => (
@@ -209,34 +197,29 @@ export function VisitSection() {
       {/* 두 번째 블록. 스티커는 이 경계선에서 한 번 잘렸다가 이어진다. */}
       <div
         className={cn(
-          "relative overflow-hidden border-t py-16",
-          "lg:py-24",
+          'relative overflow-hidden border-t py-16',
+          'lg:py-24',
           BLOCK_PAD,
-          BORDER.line,
+          BORDER.line
         )}
       >
         <Sticker />
 
-        <div className={cn("relative")}>
+        <div className={cn('relative')}>
           <div>
-            <h2
-              className={cn(
-                "text-[28px] leading-[1.15] tracking-[-0.01em]",
-                "lg:text-[2.6vw]",
-              )}
-            >
+            <h2 className={cn('text-[28px] leading-[1.15] tracking-[-0.01em]', 'lg:text-[2.6vw]')}>
               관아를 더 알고
               <br />
               싶으신가요?
             </h2>
-            <p className={cn("mt-4 max-w-[42ch] text-[15px]", TEXT.muted)}>
-              그해 차의 상태와 남은 수량은 그때그때 다릅니다. 궁금한 점은{" "}
-              <span className={cn("whitespace-nowrap")}>편하게 연락 주세요.</span>
+            <p className={cn('mt-4 max-w-[42ch] text-[15px]', TEXT.muted)}>
+              그해 차의 상태와 남은 수량은 그때그때 다릅니다. 궁금한 점은{' '}
+              <span className={cn('whitespace-nowrap')}>편하게 연락 주세요.</span>
             </p>
           </div>
 
           {/* 브랜드 소식과 구매 페이지로 이어지는 공식 채널. */}
-          <ul className={cn("mt-8 flex w-fit gap-4")}>
+          <ul className={cn('mt-8 flex w-fit gap-4')}>
             {SOCIAL_LINKS.map(({ label, href, icon, background }) => (
               <li key={label}>
                 <a
@@ -246,13 +229,13 @@ export function VisitSection() {
                   aria-label={`${label} (새 탭에서 열림)`}
                   title={label}
                   className={cn(
-                    "flex size-14 items-center justify-center rounded-2xl",
-                    "lg:size-16 lg:rounded-[20px]",
+                    'flex size-14 items-center justify-center rounded-2xl',
+                    'lg:size-16 lg:rounded-[20px]',
                     background,
                     OUTLINE.ring,
-                    "transition-[scale,filter] duration-200 hover:brightness-110 active:brightness-95",
-                    "motion-safe:hover:scale-105 motion-safe:active:scale-95 motion-reduce:transition-none",
-                    "focus-visible:outline-2 focus-visible:outline-offset-4",
+                    'transition-[scale,filter] duration-200 hover:brightness-110 active:brightness-95',
+                    'motion-safe:hover:scale-105 motion-safe:active:scale-95 motion-reduce:transition-none',
+                    'focus-visible:outline-2 focus-visible:outline-offset-4'
                   )}
                 >
                   <Image
@@ -260,7 +243,7 @@ export function VisitSection() {
                     alt=""
                     width={28}
                     height={28}
-                    className={cn("size-6 brightness-0 invert", "lg:size-7")}
+                    className={cn('size-6 brightness-0 invert', 'lg:size-7')}
                   />
                 </a>
               </li>

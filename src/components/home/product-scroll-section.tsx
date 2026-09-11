@@ -192,16 +192,18 @@ export function ProductScrollSection() {
           >
             <Image
               ref={productRef}
-              src="/woojean_box.png"
+              // src="/woojean_box.png"
+              // src="/tea_leaf.png"
+              src="/tea_leaf_only.png"
               alt="가와나 티하우스 차통"
               width={1024}
               height={1024}
-              sizes="(min-width: 1024px) 64vh, 62vw"
+              sizes="(min-width: 1024px) 40vh, 62vw"
               loading="eager"
               fetchPriority="high"
               className={cn(
                 'h-auto max-h-[84%] w-auto max-w-[62%] object-contain',
-                'lg:max-h-[54vh] lg:max-w-none'
+                'lg:max-h-[42vh] lg:max-w-none'
               )}
             />
           </div>

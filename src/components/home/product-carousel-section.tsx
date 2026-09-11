@@ -12,24 +12,24 @@ import { cn } from '@/lib/utils';
 
 // 임시 상품과 Acme 레퍼런스 사진. 실제 관아 상품 정보·사진으로 교체할 자리다.
 const PRODUCTS = [
-  { name: '버드 머그', image: '/products/sample-cup-1.jpg', type: 'MUG', price: 25000 },
+  { name: '버드 머그', image: '/products/sample-1.png', type: 'MUG', price: 25000 },
   {
     name: '클래식 컵 라지',
-    image: '/products/sample-cup-2.jpg',
+    image: '/products/sample-2.png',
     type: 'CUP & SAUCER',
     price: 18000,
   },
-  { name: '유니온 머그', image: '/products/sample-cup-3.jpg', type: 'MUG', price: 22000 },
-  { name: '머그 세트', image: '/products/sample-cup-4.jpg', type: 'SET OF 4', price: 80000 },
+  { name: '유니온 머그', image: '/products/sample-3.png', type: 'MUG', price: 22000 },
+  { name: '머그 세트', image: '/products/sample-4.png', type: 'SET OF 4', price: 80000 },
   {
     name: '클래식 컵 미니',
-    image: '/products/sample-cup-5.jpg',
+    image: '/products/sample-5.png',
     type: 'CUP & SAUCER',
     price: 15000,
   },
   {
     name: '클래식 컵 스몰',
-    image: '/products/sample-cup-6.jpg',
+    image: '/products/sample-6.png',
     type: 'CUP & SAUCER',
     price: 12000,
   },
@@ -170,7 +170,7 @@ export function ProductCarouselSection() {
   return (
     <section
       aria-labelledby="product-carousel-title"
-      className={cn('relative py-15', 'lg:py-35', BG.page, TEXT.ink)}
+      className={cn('relative py-15', 'lg:py-20', BG.page, TEXT.ink)}
     >
       <div className={cn('mb-8 flex items-end justify-between gap-4 px-4', 'lg:mb-12 lg:px-7')}>
         <h2
@@ -233,7 +233,7 @@ export function ProductCarouselSection() {
                 draggable={false}
                 aria-label={`${product.name} — GO TO SHOP`}
                 className={cn(
-                  'mt-auto flex min-h-10 items-center justify-between border px-3 font-mono text-[13px] font-bold',
+                  'mt-auto flex min-h-10 items-center justify-between border px-3 font-mono text-[12px] font-bold',
                   'lg:min-h-9 lg:text-[14px]',
                   BORDER.ring,
                   OUTLINE.ring,
@@ -245,9 +245,7 @@ export function ProductCarouselSection() {
               >
                 GO TO SHOP{' '}
                 {product.price && (
-                  <span className={cn('ml-2 font-bold')}>
-                    {product.price.toLocaleString()}원
-                  </span>
+                  <span className={cn('ml-2 font-bold')}>{product.price.toLocaleString()}원</span>
                 )}
               </Link>
             </article>
