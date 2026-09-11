@@ -20,6 +20,15 @@ export const COLOR = {
   hairline: "#e5e5e5",
   /** 키보드 포커스 링. neutral-400. */
   ring: "#a1a1a1",
+  /** 이전 버전 푸터의 녹색 바탕과 그 위의 텍스트·구분선. */
+  footer: "#3c4d3d",
+  footerText: "#d8dcd8",
+  footerMuted: "#b1b9b1",
+  footerLine: "#677367",
+  instagramGold: "#ffcf55",
+  instagramPink: "#ee2a7b",
+  instagramPurple: "#6228d7",
+  naver: "#03c75a",
 } as const;
 
 export type ColorName = keyof typeof COLOR;
@@ -32,6 +41,9 @@ export type ColorName = keyof typeof COLOR;
 
 /** 배경색. */
 export const BG = {
+  instagram: "bg-linear-to-tr from-[#ffcf55] via-[#ee2a7b] to-[#6228d7]",
+  naver: "bg-[#03c75a]",
+  footer: "bg-[#3c4d3d]",
   page: "bg-[#ffffff]",
   ink: "bg-[#0a0a0a]",
   /** 잉크 면의 호버 상태. */
@@ -44,6 +56,8 @@ export const BG = {
 
 /** 글자색. */
 export const TEXT = {
+  footer: "text-[#d8dcd8]",
+  footerMuted: "text-[#b1b9b1]",
   ink: "text-[#0a0a0a]",
   /** 호버 시 옅어지는 상태. */
   inkHover: "hover:text-[#0a0a0a]/55",
@@ -53,6 +67,7 @@ export const TEXT = {
 
 /** 테두리색. 방향은 호출부에서 border-t / border-l 등으로 지정한다. */
 export const BORDER = {
+  footer: "border-[#677367]",
   /** 헤더 괘선. 레퍼런스의 1px 순검정 선. */
   line: "border-[#000000]",
   /** 패널 내부의 옅은 구분선. */

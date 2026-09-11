@@ -1,11 +1,11 @@
 "use client";
 
 import { useRef } from "react";
+import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 import {
-  CONTACT_FIELDS,
   OPENING_HOURS,
   STORE_ADDRESS,
 } from "@/constants/business";
@@ -34,6 +34,21 @@ gsap.registerPlugin(ScrollTrigger);
  */
 const STICKER = "visit-sticker";
 
+const SOCIAL_LINKS = [
+  {
+    label: "인스타그램",
+    href: "https://www.instagram.com/gwana_tea_house/",
+    icon: "/instagram.svg",
+    background: BG.instagram,
+  },
+  {
+    label: "네이버 스마트스토어",
+    href: "https://smartstore.naver.com/gwana",
+    icon: "/naver.svg",
+    background: BG.naver,
+  },
+] as const;
+
 /**
  * 스티커를 뷰포트 하단에 붙여두는 y 값의 유도.
  *
@@ -59,13 +74,8 @@ const STICKER_TO = () => window.innerHeight;
 const BLOCK_PAD = cn("px-4", "lg:pr-[24vw] lg:pl-[4.6667vw]");
 
 /**
- * 원본은 사진을 오려낸 PNG다. 우리 팔레트에는 그런 소재가 없으므로 같은 자리에
- * 놓이는 원형 스탬프를 만들었다. 나중에 진짜 스티커 이미지가 생기면 이 컴포넌트
- * 안쪽만 갈아끼우면 된다. 바깥 래퍼의 위치·클래스는 건드리지 않는다.
- *
- * 회전은 반드시 **안쪽** 요소에 준다. GSAP은 transform을 만질 때 개별 속성
- * (`translate` / `rotate` / `scale`)을 `none`으로 덮어쓰므로, y를 받는 바깥
- * 래퍼에 Tailwind `rotate-*`를 주면 조용히 지워진다.
+ * 사용자가 제공한 FRESH TEA 가방 이미지. 원본에 기울기가 있으므로 별도로
+ * 회전하지 않는다. 바깥 래퍼는 기존 스크롤 위치와 경계 클리핑을 유지한다.
  */
 function Sticker() {
   return (
@@ -74,27 +84,22 @@ function Sticker() {
       className={cn(
         // 모바일에서는 원본도 끈다(원본은 1199px 이하에서 background-image: none).
         STICKER,
-        "pointer-events-none absolute right-[6vw] bottom-10 hidden",
+        "pointer-events-none absolute right-[12vw] bottom-50 hidden",
         "lg:block",
         "motion-reduce:lg:hidden",
       )}
     >
-      <div
+      <Image
+        src="/fresh-tea-bag2.webp"
+        alt=""
+        width={1268}
+        height={1240}
+        priority
+        sizes="(min-width: 1600px) 208px, (min-width: 1231px) 13vw, 160px"
         className={cn(
-          "flex aspect-square w-[13vw] max-w-52 min-w-40 rotate-[-9deg] flex-col items-center justify-center rounded-full text-center",
-          BG.black,
-          TEXT.white,
+          "h-auto w-[20vw] max-w-100 min-w-40",
         )}
-      >
-        <span className="text-[10px] tracking-[0.24em] uppercase opacity-70">
-          gwana
-        </span>
-        <span className="font-wordmark mt-1.5 text-[clamp(20px,1.9vw,30px)] leading-[1.06] font-extrabold">
-          올해
-          <br />첫 잎
-        </span>
-        <span className="mt-2 text-[10px] tracking-[0.14em]">곡우 전 수확</span>
-      </div>
+      />
     </div>
   );
 }
@@ -212,12 +217,7 @@ export function VisitSection() {
       >
         <Sticker />
 
-        <div
-          className={cn(
-            "relative",
-            "lg:flex lg:items-end lg:justify-between lg:gap-12",
-          )}
-        >
+        <div className={cn("relative")}>
           <div>
             <h2
               className={cn(
@@ -230,39 +230,38 @@ export function VisitSection() {
               싶으신가요?
             </h2>
             <p className={cn("mt-4 max-w-[42ch] text-[15px]", TEXT.muted)}>
-              그해 차의 상태와 남은 수량은 그때그때 다릅니다. 궁금한 점은 편하게
-              연락 주세요.
+              그해 차의 상태와 남은 수량은 그때그때 다릅니다. 궁금한 점은{" "}
+              <span className={cn("whitespace-nowrap")}>편하게 연락 주세요.</span>
             </p>
           </div>
 
-          {/* 원본의 아이콘 칸을 실제 연락 수단으로 바꿨다. 없는 SNS를 만들지 않는다. */}
-          <ul
-            className={cn(
-              "mt-8 flex w-fit border",
-              "lg:mt-0 lg:shrink-0",
-              BORDER.line,
-            )}
-          >
-            {CONTACT_FIELDS.map(({ term, href }) => (
-              <li
-                key={term}
-                className={cn("border-l first:border-l-0", BORDER.line)}
-              >
+          {/* 브랜드 소식과 구매 페이지로 이어지는 공식 채널. */}
+          <ul className={cn("mt-8 flex w-fit gap-4")}>
+            {SOCIAL_LINKS.map(({ label, href, icon, background }) => (
+              <li key={label}>
                 <a
                   href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`${label} (새 탭에서 열림)`}
+                  title={label}
                   className={cn(
-                    HEADER_LABEL,
-                    "flex h-11 items-center justify-center px-5",
-                    "lg:h-12 lg:px-7",
-                    TEXT.ink,
-                    TEXT.inkHover,
-                    BG.hairlineHover,
-                    "transition-colors duration-150",
-                    "focus-visible:outline-2 focus-visible:-outline-offset-2",
+                    "flex size-14 items-center justify-center rounded-2xl",
+                    "lg:size-16 lg:rounded-[20px]",
+                    background,
                     OUTLINE.ring,
+                    "transition-[scale,filter] duration-200 hover:brightness-110 active:brightness-95",
+                    "motion-safe:hover:scale-105 motion-safe:active:scale-95 motion-reduce:transition-none",
+                    "focus-visible:outline-2 focus-visible:outline-offset-4",
                   )}
                 >
-                  {term}
+                  <Image
+                    src={icon}
+                    alt=""
+                    width={28}
+                    height={28}
+                    className={cn("size-6 brightness-0 invert", "lg:size-7")}
+                  />
                 </a>
               </li>
             ))}

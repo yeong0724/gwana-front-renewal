@@ -63,6 +63,14 @@
  * (Tailwind neutral 스케일과 동일한 값이라 렌더 결과는 바뀌지 않는다).
  */
 :root {
+  --instagram-gold: #ffcf55;
+  --instagram-pink: #ee2a7b;
+  --instagram-purple: #6228d7;
+  --naver: #03c75a;
+  --footer: #3c4d3d;
+  --footer-text: #d8dcd8;
+  --footer-muted: #b1b9b1;
+  --footer-line: #677367;
   --background: #ffffff;
   --foreground: #0a0a0a;
   --card: #ffffff;
