@@ -51,6 +51,8 @@ export const BG = {
   /** 흰 면 위 옅은 호버. */
   hairlineHover: "hover:bg-[#e5e5e5]/60",
   black: "bg-[#000000]",
+  /** 흰 면 위 버튼의 반전 호버. */
+  blackHover: "hover:bg-[#000000]",
   transparent: "bg-transparent",
 } as const;
 
@@ -63,10 +65,13 @@ export const TEXT = {
   inkHover: "hover:text-[#0a0a0a]/55",
   muted: "text-[#737373]",
   white: "text-[#ffffff]",
+  /** 배경이 검정으로 반전될 때의 글자색. */
+  whiteHover: "hover:text-[#ffffff]",
 } as const;
 
 /** 테두리색. 방향은 호출부에서 border-t / border-l 등으로 지정한다. */
 export const BORDER = {
+  ring: "border-[#a1a1a1]",
   footer: "border-[#677367]",
   /** 헤더 괘선. 레퍼런스의 1px 순검정 선. */
   line: "border-[#000000]",
@@ -74,9 +79,11 @@ export const BORDER = {
   hairline: "border-[#e5e5e5]",
 } as const;
 
-/** 포커스 아웃라인. */
+/** 아웃라인. 두께는 호출부에서 outline-2 등으로 지정한다. */
 export const OUTLINE = {
   ring: "outline-[#a1a1a1]",
+  /** 카드 호버 시 안쪽에 그리는 굵은 검정 선. */
+  line: "outline-[#000000]",
 } as const;
 
 /**

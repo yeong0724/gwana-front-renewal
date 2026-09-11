@@ -20,8 +20,8 @@ gsap.registerPlugin(ScrollTrigger, CustomEase);
  * 그 자리를 버튼이 가져갔고, 업종은 이름 **위** 한 줄로 올라와 눈썹이 됐다.
  * 받침이 둘(업종 + 버튼)이면 이름이 가운데 끼어 무게가 흩어진다.
  */
-const WORDMARK = "관아수제차";
-const EYEBROW = "화개골 수제차";
+const WORDMARK = "지리산이 품고 키운 찻잎";
+const EYEBROW = "그 맑음을 그대로";
 
 /** 히어로 진입점. 왼쪽이 주 동선(구매), 오른쪽이 보조(브랜드)다. */
 const HERO_CTAS = [
@@ -334,26 +334,27 @@ export function HeroSection() {
         >
           {/* 눈썹. 이름을 소개하는 한 줄이라 이름 위에 놓인다.
               마스크(overflow-hidden)와 pt/pb는 워드마크 글자와 같은 이유다. */}
-          <p
-            className={cn(
-              "overflow-hidden pt-[0.25em] pb-[0.06em] pl-[0.3em] text-[3.4vw] leading-none",
-              "lg:text-[1.6vw]",
-            )}
-          >
-            <span className="hero-eyebrow inline-block">{EYEBROW}</span>
-          </p>
 
           {/* 이름. 큰 글자는 자간을 조여야 덩어리로 읽힌다. */}
           <h1 aria-label={WORDMARK} className="font-wordmark">
             <span
               className={cn(
-                "block whitespace-nowrap text-[14vw] leading-[0.82] font-extrabold",
-                "lg:text-[6vw]",
+                "block whitespace-nowrap text-[8vw] leading-[0.82] font-extrabold",
+                "lg:text-[4vw]",
               )}
             >
               <WordmarkChars text={WORDMARK} />
             </span>
           </h1>
+
+          <p
+            className={cn(
+              "overflow-hidden pt-[0.8em] pb-[0.06em] pl-[0.3em] text-[4vw] leading-none",
+              "lg:text-[2vw] lg:pt-[0.5em]",
+            )}
+          >
+            <span className="hero-eyebrow inline-block">{EYEBROW}</span>
+          </p>
 
           {/* 진입점. 좁은 화면에서 두 칸이 안 들어가면 줄을 바꾼다. */}
           <div className={cn("mt-5 flex flex-wrap gap-2", "lg:mt-7 lg:gap-3")}>
